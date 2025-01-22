@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="matrix-bg"></div>
+    
+    <!-- Ana Sayfa Başlık -->
+    <header>
+        <h1 class="glitch" data-text="BARIŞ">BARIŞ</h1>
+    </header>
+
+    <!-- Admin Butonu -->
+    <button class="admin-btn" onclick="toggleAdmin(true)">
+        <i class="fas fa-terminal"></i>
+    </button>
+
+    <!-- Sidebar toggle butonu ekle -->
+    <button class="sidebar-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Responsive menü için overlay -->
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel" class="admin-panel">
+        <div class="admin-content">
+            <!-- Şifre Bölümü -->
+            <div id="passwordSection" class="password-section">
+                <div class="admin-header">
+                    <h2 class="admin-title">Matrix Terminal</h2>
+                    <p class="admin-subtitle">Sisteme erişim için kimlik doğrulama gerekli</p>
+                </div>
+                <div class="password-wrapper">
+                    <i class="fas fa-key password-icon"></i>
+                    <input type="password" 
+                           id="adminPassword" 
+                           class="password-input" 
+                           placeholder="••••••••"
+                           onkeypress="if(event.key === 'Enter') checkPassword()">
+                </div>
+                <button class="login-btn" onclick="checkPassword()">
+                    <i class="fas fa-terminal"></i>
+                    Erişim İste
+                </button>
+            </div>
+
+            <!-- İşlem Menüsü -->
+            <div id="addSection" class="add-section" style="display: none;">
+                <div class="dashboard">
+                    <!-- Sol Menü -->
+                    <div class="dashboard-sidebar">
+                        <div class="user-info">
+                            <div class="user-avatar">
+                                <i class="fas fa-user-shield"></i>
+                                <span class="status-dot online"></span>
+                            </div>
+                            <div class="user-details">
+                                <h3>Admin Panel</h3>
+                                <span class="user-role">Yönetici</span>
+                            </div>
+                        </div>
+                        
+                        <nav class="sidebar-nav">
+                            <a href="#" class="nav-item active" onclick="showDashboardSection('overview')">
+                                <i class="fas fa-home"></i>
+                                <span>Genel Bakış</span>
+                                <span class="nav-indicator">4</span>
+                            </a>
+                            <a href="#" class="nav-item" onclick="showDashboardSection('links')">
+                                <i class="fas fa-link"></i>
+                                <span>Linkler</span>
+                                <span class="item-count" id="sidebarLinkCount">0</span>
+                            </a>
+                            <a href="#" class="nav-item" onclick="showDashboardSection('files')">
+                                <i class="fas fa-file"></i>
+                                <span>Dosyalar</span>
+                                <span class="item-count" id="sidebarFileCount">0</span>
+                            </a>
+                            <a href="#" class="nav-item" onclick="showDashboardSection('notes')">
+                                <i class="fas fa-sticky-note"></i>
+                                <span>Notlar</span>
+                                <span class="item-count" id="sidebarNoteCount">0</span>
+                            </a>
+                            <div class="nav-section-title">Araçlar</div>
+                            <a href="#" class="nav-item" onclick="showDashboardSection('settings')">
+                                <i class="fas fa-cog"></i>
+                                <span>Ayarlar</span>
+                            </a>
+                            <a href="#" class="nav-item" onclick="showDashboardSection('analytics')">
+                                <i class="fas fa-chart-line"></i>
+                                <span>İstatistikler</span>
+                            </a>
+                        </nav>
+
+                        <div class="sidebar-footer">
+                            <div class="system-status">
+                                <i class="fas fa-server"></i>
+                                <span>Sistem Durumu: </span>
+                                <span class="status-text online">Aktif</span>
+                            </div>
+                            <button class="logout-btn" onclick="logout()">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Çıkış Yap</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Ana İçerik -->
+                    <div class="dashboard-main">
+                        <div class="dashboard-header">
+                            <div class="header-left">
+                                <div class="header-search">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" placeholder="Ara..." onkeyup="searchItems(this.value)">
+                                    <div class="search-results" id="searchResults"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="header-right">
+                            </div>
+                        </div>
+
+                        <!-- İçerik Bölümleri -->
+                        <div class="dashboard-content">
+                            <!-- Genel Bakış -->
+                            <div id="overview" class="content-section active">
+                                <div class="welcome-banner">
+                                    <div class="welcome-text">
+                                        <h2>
+                                            <i class="fas fa-hand-wave"></i>
+                                            Hoş Geldiniz, Admin
+                                        </h2>
+                                        <p>
+                                            <i class="fas fa-clock"></i>
+                                            Son giriş: <span id="lastLogin">22 Mart 2024, 15:30</span>
+                                        </p>
+                                        <p>
+                                            <i class="fas fa-signal"></i>
+                                            Sistem durumu: <span class="status-text online">Aktif</span>
+                                        </p>
+                                    </div>
+                                    <div class="quick-stats">
+                                        <div class="stat-item">
+                                            <span class="stat-label">Aktif Oturum</span>
+                                            <span class="stat-value">1 saat 23 dk</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">Toplam İşlem</span>
+                                            <span class="stat-value" id="totalActions">24</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">Performans</span>
+                                            <span class="stat-value">%98.5</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="stats-grid">
+                                    <div class="stat-card">
+                                        <i class="fas fa-link"></i>
+                                        <div class="stat-info">
+                                            <h3 id="linkCount">128</h3>
+                                            <p>Aktif Link</p>
+                                        </div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <i class="fas fa-file"></i>
+                                        <div class="stat-info">
+                                            <h3 id="fileCount">64</h3>
+                                            <p>Toplam Dosya</p>
+                                        </div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <i class="fas fa-sticky-note"></i>
+                                        <div class="stat-info">
+                                            <h3 id="noteCount">32</h3>
+                                            <p>Kayıtlı Not</p>
+                                        </div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <i class="fas fa-chart-line"></i>
+                                        <div class="stat-info">
+                                            <h3 id="growthRate">+45%</h3>
+                                            <p>Aylık Büyüme</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="dashboard-widgets">
+                                    <div class="widget activity-widget">
+                                        <div class="widget-header">
+                                            <h3>
+                                                <i class="fas fa-history"></i>
+                                                Son Aktiviteler
+                                            </h3>
+                                            <button class="refresh-btn" onclick="refreshActivities()">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
+                                        <div class="activity-timeline" id="activityTimeline">
+                                            <!-- Aktiviteler JavaScript ile doldurulacak -->
+                                        </div>
+                                    </div>
+
+                                    <div class="widget chart-widget">
+                                        <div class="widget-header">
+                                            <h3>
+                                                <i class="fas fa-chart-bar"></i>
+                                                İstatistikler
+                                            </h3>
+                                            <div class="widget-actions">
+                                                <button class="chart-type-btn active" data-type="weekly">
+                                                    Haftalık
+                                                </button>
+                                                <button class="chart-type-btn" data-type="monthly">
+                                                    Aylık
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="chart-container" id="statsChart">
+                                            <!-- Grafik JavaScript ile doldurulacak -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Link Listesi -->
+                            <div id="links" class="content-section">
+                                <div class="section-header">
+                                    <h2>Linkler</h2>
+                                    <button class="add-btn" onclick="showAddForm('link')">
+                                        <i class="fas fa-plus"></i>
+                                        Link Ekle
+                                    </button>
+                                </div>
+                                <div class="items-grid link-list" id="linkList">
+                                    <!-- JavaScript ile doldurulacak -->
+                                </div>
+                            </div>
+
+                            <!-- Dosya Listesi -->
+                            <div id="files" class="content-section">
+                                <div class="section-header">
+                                    <h2>Dosyalar</h2>
+                                    <button class="add-btn" onclick="showAddForm('file')">
+                                        <i class="fas fa-plus"></i>
+                                        Dosya Ekle
+                                    </button>
+                                </div>
+                                <div class="items-grid file-list" id="fileList">
+                                    <!-- JavaScript ile doldurulacak -->
+                                </div>
+                            </div>
+
+                            <!-- Not Listesi -->
+                            <div id="notes" class="content-section">
+                                <div class="section-header">
+                                    <h2>Notlar</h2>
+                                    <button class="add-btn" onclick="showAddForm('note')">
+                                        <i class="fas fa-plus"></i>
+                                        Not Ekle
+                                    </button>
+                                </div>
+                                <div class="items-grid note-list" id="noteList">
+                                    <!-- JavaScript ile doldurulacak -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kapatma Butonu -->
+            <button class="close-btn" onclick="toggleAdmin(false)">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Form Modalları -->
+    <div class="modal" id="linkModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-link"></i> Link Ekle</h3>
+                <button class="close-modal" onclick="closeModal('linkModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form onsubmit="submitLink(event)">
+                <div class="form-group">
+                    <label>Link Başlığı</label>
+                    <input type="text" id="linkTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>URL</label>
+                    <input type="url" id="linkUrl" required>
+                </div>
+                <div class="form-group">
+                    <label>Açıklama</label>
+                    <textarea id="linkDesc"></textarea>
+                </div>
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-plus"></i>
+                    Ekle
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="fileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-file"></i> Dosya Ekle</h3>
+                <button class="close-modal" onclick="closeModal('fileModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form onsubmit="submitFile(event)">
+                <div class="form-group">
+                    <label>Dosya Adı</label>
+                    <input type="text" id="fileName" required>
+                </div>
+                <div class="form-group">
+                    <label>Dosya</label>
+                    <div class="file-upload">
+                        <input type="file" id="fileInput" required>
+                        <label for="fileInput">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            Dosya Seç
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Açıklama</label>
+                    <textarea id="fileDesc"></textarea>
+                </div>
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-plus"></i>
+                    Ekle
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="noteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-sticky-note"></i> Not Ekle</h3>
+                <button class="close-modal" onclick="closeModal('noteModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form onsubmit="submitNote(event)">
+                <div class="form-group">
+                    <label>Başlık</label>
+                    <input type="text" id="noteTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Not</label>
+                    <textarea id="noteContent" required></textarea>
+                </div>
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-plus"></i>
+                    Ekle
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="confirm-dialog" id="logoutConfirm" style="display: none;">
+        <div class="confirm-content">
+            <h3>
+                <i class="fas fa-sign-out-alt"></i>
+                Çıkış Yap
+            </h3>
+            <p>Oturumu kapatmak istediğinizden emin misiniz?</p>
+            <div class="confirm-buttons">
+                <button class="confirm-btn cancel" onclick="closeLogoutConfirm()">
+                    <i class="fas fa-times"></i>
+                    İptal
+                </button>
+                <button class="confirm-btn danger" onclick="confirmLogout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Çıkış Yap
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
