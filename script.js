@@ -225,7 +225,7 @@ function resetAllForms() {
 // Şifre kontrolü
 function checkPassword() {
     const password = document.getElementById('adminPassword').value;
-    if (password === '1234') { // Örnek şifre
+    if (password === '112263') { // Changed from '1234' to '112263'
         document.getElementById('passwordSection').style.display = 'none';
         document.getElementById('addSection').style.display = 'block';
         showNotification('Giriş başarılı', 'success');
