@@ -7,45 +7,72 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <!-- Firebase config -->
+    <script src="firebase-config.js"></script>
 </head>
 <body>
     <!-- Matrix Arka Plan -->
     <canvas id="matrixCanvas"></canvas>
 
     <!-- Ana Başlık -->
-    <header>
+    <header style="display: none;">
         <h1 class="glitch" data-text="MARSAN">MARSAN</h1>
     </header>
 
     <!-- Login Panel -->
     <div id="loginPanel" class="panel">
-        <div class="terminal-window">
-            <div class="terminal-header">
-                <span class="terminal-title">SYSTEM ACCESS</span>
-                <div class="terminal-controls">
-                    <span class="control minimize"></span>
-                    <span class="control maximize"></span>
-                    <span class="control close" onclick="hideLogin()"></span>
-                </div>
+        <div class="matrix-login">
+            <div class="login-header">
+                <div class="matrix-title">MARSAN SECURITY SYSTEM</div>
+                <div class="matrix-subtitle">AUTHENTICATION REQUIRED</div>
             </div>
-            <div class="terminal-content">
-                <div class="login-animation">
-                    <div class="scanning-line"></div>
-                    <pre class="ascii-art">
-███╗   ███╗ █████╗ ██████╗ ███████╗ █████╗ ███╗   ██╗
-████╗ ████║██╔══██╗██╔══██╗██╔════╝██╔══██╗████╗  ██║
-██╔████╔██║███████║██████╔╝███████╗███████║██╔██╗ ██║
-██║╚██╔╝██║██╔══██║██╔══██╗╚════██║██╔══██║██║╚██╗██║
-██║ ╚═╝ ██║██║  ██║██║  ██║███████║██║  ██║██║ ╚████║
-╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝
-                    </pre>
+            
+            <canvas id="matrixLoginCanvas" class="matrix-code-rain"></canvas>
+            
+            <div class="login-container">
+                <div class="access-terminal">
+                    <div class="terminal-header">
+                        <div class="terminal-controls">
+                            <span class="control"></span>
+                            <span class="control"></span>
+                            <span class="control"></span>
+                        </div>
+                        <div class="terminal-title">SYSTEM ACCESS</div>
+                    </div>
+                    <div class="terminal-body">
+                        <div class="ascii-logo">
+                            <pre>
+ ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄        ▄ 
+▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░▌      ▐░▌
+▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀▀▌▐░█▀▀▀▀▀▀▀█░▌▐░▌░▌     ▐░▌
+▐░▌       ▐░▌▐░▌       ▐░▌▐░▌       ▐░▌▐░▌         ▐░▌       ▐░▌▐░▌▐░▌    ▐░▌
+▐░█▄▄▄▄▄▄▄█░▌▐░█▄▄▄▄▄▄▄█░▌▐░█▄▄▄▄▄▄▄█░▌▐░█▄▄▄▄▄▄▄▄▌▐░█▄▄▄▄▄▄▄█░▌▐░▌ ▐░▌   ▐░▌
+▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░▌  ▐░▌  ▐░▌
+▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀█░█▀▀ ▐░█▀▀▀▀▀▀▀▀▌▐░█▀▀▀▀▀▀▀█░▌▐░▌   ▐░▌ ▐░▌
+▐░▌       ▐░▌▐░▌       ▐░▌▐░▌     ▐░▌  ▐░▌         ▐░▌       ▐░▌▐░▌    ▐░▌▐░▌
+▐░▌       ▐░▌▐░▌       ▐░▌▐░▌      ▐░▌ ▐░█▄▄▄▄▄▄▄▄▌▐░▌       ▐░▌▐░▌     ▐░▐░▌
+▐░▌       ▐░▌▐░▌       ▐░▌▐░▌       ▐░▌▐░░░░░░░░░░░▌▐░▌       ▐░▌▐░▌      ▐░░▌
+ ▀         ▀  ▀         ▀  ▀         ▀  ▀▀▀▀▀▀▀▀▀▀▀  ▀         ▀  ▀        ▀▀ 
+                            </pre>
+                        </div>
+                        <div class="login-form">
+                            <div class="input-group">
+                                <label>> ENTER ACCESS CODE:</label>
+                                <input type="password" id="accessCode" 
+                                       onkeypress="if(event.key === 'Enter') verifyAccess()"
+                                       autocomplete="off">
+                                <div class="input-line"></div>
+                            </div>
+                            <div class="terminal-output"></div>
+                        </div>
+                    </div>
                 </div>
-                <div class="terminal-input">
-                    <span class="prompt">></span>
-                    <input type="password" id="accessCode" placeholder="ENTER ACCESS CODE" 
-                           onkeypress="if(event.key === 'Enter') verifyAccess()">
-                </div>
-                <div class="terminal-output"></div>
             </div>
         </div>
     </div>
@@ -143,6 +170,34 @@
                     <button type="submit" class="submit-btn">
                         <i class="fas fa-upload"></i>
                         <span>UPLOAD</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Not Ekleme Modalı -->
+    <div id="noteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-sticky-note"></i> ADD NOTE</h3>
+                <button class="close-btn" onclick="hideModal('noteModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="noteForm" onsubmit="handleNoteAdd(event)">
+                    <div class="form-group">
+                        <label>TITLE</label>
+                        <input type="text" id="noteTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label>CONTENT</label>
+                        <textarea id="noteContent" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-plus"></i>
+                        <span>ADD NOTE</span>
                     </button>
                 </form>
             </div>

@@ -306,58 +306,57 @@ function showDashboardSection(sectionId) {
     event.currentTarget.classList.add('active');
 }
 
-// Çıkış fonksiyonları
+// Çıkış fonksiyonu
 function logout() {
-    document.getElementById('logoutConfirm').style.display = 'flex';
+    // Onay dialogu göster
+    showConfirm('Çıkış yapmak istediğinizden emin misiniz?', () => {
+        // Matrix başlığını göster
+        document.querySelector('header').style.display = 'block';
+        
+        // Operatör konsolunu gizle
+        const mainPanel = document.getElementById('mainPanel');
+        mainPanel.classList.remove('fade-in');
+        mainPanel.classList.add('fade-out');
+        
+        setTimeout(() => {
+            mainPanel.style.display = 'none';
+            mainPanel.classList.remove('fade-out');
+            
+            // Login panelini göster
+            const loginPanel = document.getElementById('loginPanel');
+            loginPanel.style.display = 'block';
+            loginPanel.classList.add('fade-in');
+            
+            // Şifre alanını temizle
+            document.getElementById('accessCode').value = '';
+            document.querySelector('.terminal-output').innerHTML = '';
+        }, 500);
+    });
 }
 
-function closeLogoutConfirm() {
-    document.getElementById('logoutConfirm').style.display = 'none';
-}
-
-function confirmLogout() {
-    // Çıkış işlemleri
-    document.getElementById('adminPanel').style.display = 'none';
-    document.getElementById('logoutConfirm').style.display = 'none';
-    document.getElementById('passwordSection').style.display = 'flex';
-    document.getElementById('addSection').style.display = 'none';
-    document.getElementById('adminPassword').value = '';
-    
-    // Ana sayfaya dön
-    document.querySelector('.admin-btn').style.display = 'flex';
-    
-    // İstatistikleri sıfırla
-    resetStats();
-}
-
-function resetStats() {
-    document.getElementById('linkCount').textContent = '0';
-    document.getElementById('fileCount').textContent = '0';
-    document.getElementById('noteCount').textContent = '0';
-    document.getElementById('totalActions').textContent = '0';
-    // Diğer istatistikleri sıfırla
-}
-
-// Onay dialogu
+// Onay dialogu gösterme fonksiyonu
 function showConfirm(message, callback) {
-    const confirmDialog = document.createElement('div');
-    confirmDialog.className = 'confirm-dialog';
-    confirmDialog.innerHTML = `
-        <div class="confirm-content">
-            <p>${message}</p>
-            <div class="confirm-buttons">
-                <button onclick="handleConfirm(true)" class="confirm-btn">
-                    <i class="fas fa-check"></i> Evet
-                </button>
-                <button onclick="handleConfirm(false)" class="confirm-btn cancel">
-                    <i class="fas fa-times"></i> Hayır
-                </button>
+    const dialog = document.createElement('div');
+    dialog.className = 'confirm-dialog';
+    dialog.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> CONFIRM</h3>
+            </div>
+            <div class="modal-body">
+                <p>${message}</p>
+                <div class="button-group">
+                    <button onclick="handleConfirm(true)" class="confirm-btn">
+                        <i class="fas fa-check"></i> YES
+                    </button>
+                    <button onclick="handleConfirm(false)" class="confirm-btn cancel">
+                        <i class="fas fa-times"></i> NO
+                    </button>
+                </div>
             </div>
         </div>
     `;
-    document.body.appendChild(confirmDialog);
-
-    // Global callback'i sakla
+    document.body.appendChild(dialog);
     window.confirmCallback = callback;
 }
 
@@ -854,7 +853,7 @@ async function handleFileUpload(event) {
     const progressElement = progressBar.querySelector('.progress');
 
     if (!file) {
-        showNotification('Please select a file', 'error');
+        showNotification('Lütfen bir dosya seçin', 'error');
         return;
     }
 
@@ -874,7 +873,7 @@ async function handleFileUpload(event) {
                 progressElement.style.width = progress + '%';
             },
             (error) => {
-                showNotification('Upload failed: ' + error.message, 'error');
+                showNotification('Yükleme başarısız: ' + error.message, 'error');
                 progressBar.style.display = 'none';
             },
             async () => {
@@ -892,14 +891,14 @@ async function handleFileUpload(event) {
                     uploadDate: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                showNotification('File uploaded successfully');
+                showNotification('Dosya başarıyla yüklendi');
                 hideModal('uploadModal');
                 loadFiles();
                 progressBar.style.display = 'none';
             }
         );
     } catch (error) {
-        showNotification('Error: ' + error.message, 'error');
+        showNotification('Hata: ' + error.message, 'error');
         progressBar.style.display = 'none';
     }
 }
@@ -907,7 +906,7 @@ async function handleFileUpload(event) {
 // Dosyaları yükle
 async function loadFiles() {
     const filesGrid = document.getElementById('filesGrid');
-    filesGrid.innerHTML = '<div class="loading">Loading files...</div>';
+    filesGrid.innerHTML = '<div class="loading">Dosyalar yükleniyor...</div>';
 
     try {
         const snapshot = await db.collection('files')
@@ -915,7 +914,7 @@ async function loadFiles() {
             .get();
 
         if (snapshot.empty) {
-            filesGrid.innerHTML = '<div class="no-items">No files found</div>';
+            filesGrid.innerHTML = '<div class="no-items">Dosya bulunamadı</div>';
             return;
         }
 
@@ -928,8 +927,8 @@ async function loadFiles() {
 
         updateCounts();
     } catch (error) {
-        filesGrid.innerHTML = '<div class="error">Error loading files</div>';
-        console.error('Error loading files:', error);
+        filesGrid.innerHTML = '<div class="error">Dosyalar yüklenirken hata oluştu</div>';
+        console.error('Dosya yükleme hatası:', error);
     }
 }
 
@@ -1047,4 +1046,182 @@ function switchView(viewName) {
     } else if (viewName === 'notes') {
         loadNotes();
     }
-} 
+}
+
+// Not ekleme işlemi
+async function handleNoteAdd(event) {
+    event.preventDefault();
+    
+    const noteTitle = document.getElementById('noteTitle').value;
+    const noteContent = document.getElementById('noteContent').value;
+
+    try {
+        await db.collection('notes').add({
+            title: noteTitle,
+            content: noteContent,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        showNotification('Not başarıyla eklendi');
+        hideModal('noteModal');
+        loadNotes();
+    } catch (error) {
+        showNotification('Hata: ' + error.message, 'error');
+    }
+}
+
+// Notları yükle
+async function loadNotes() {
+    const notesGrid = document.getElementById('notesGrid');
+    notesGrid.innerHTML = '<div class="loading">Notlar yükleniyor...</div>';
+
+    try {
+        const snapshot = await db.collection('notes')
+            .orderBy('createdAt', 'desc')
+            .get();
+
+        if (snapshot.empty) {
+            notesGrid.innerHTML = '<div class="no-items">Not bulunamadı</div>';
+            return;
+        }
+
+        notesGrid.innerHTML = '';
+        snapshot.forEach(doc => {
+            const note = doc.data();
+            const noteCard = createNoteCard(doc.id, note);
+            notesGrid.appendChild(noteCard);
+        });
+
+        updateCounts();
+    } catch (error) {
+        notesGrid.innerHTML = '<div class="error">Notlar yüklenirken hata oluştu</div>';
+        console.error('Not yükleme hatası:', error);
+    }
+}
+
+// Not kartı oluştur
+function createNoteCard(id, note) {
+    const div = document.createElement('div');
+    div.className = 'file-card';
+    div.innerHTML = `
+        <div class="file-icon">
+            <i class="fas fa-sticky-note"></i>
+        </div>
+        <div class="file-info">
+            <h3>${note.title}</h3>
+            <p>${note.content}</p>
+            <span class="file-meta">
+                ${formatDate(note.createdAt)}
+            </span>
+        </div>
+        <div class="file-actions">
+            <button onclick="editNote('${id}')" class="action-btn">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="deleteNote('${id}')" class="action-btn delete">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    return div;
+}
+
+// Not silme
+async function deleteNote(id) {
+    if (!confirm('Bu notu silmek istediğinizden emin misiniz?')) return;
+
+    try {
+        await db.collection('notes').doc(id).delete();
+        showNotification('Not başarıyla silindi');
+        loadNotes();
+    } catch (error) {
+        showNotification('Not silinirken hata oluştu: ' + error.message, 'error');
+    }
+}
+
+// Sayaçları güncelle
+function updateCounts() {
+    db.collection('files').get().then(snapshot => {
+        document.getElementById('fileCount').textContent = snapshot.size;
+    });
+    
+    db.collection('notes').get().then(snapshot => {
+        document.getElementById('noteCount').textContent = snapshot.size;
+    });
+}
+
+// Matrix yağmur efekti
+function initMatrixRain() {
+    const canvas = document.getElementById('matrixLoginCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Canvas boyutunu ekrana göre ayarla
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Matrix karakterleri (Katakana + Latin + Sayılar)
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
+    const charArray = chars.split('');
+    
+    const fontSize = 14;
+    const columns = canvas.width / fontSize;
+    const drops = [];
+
+    // Her sütun için başlangıç Y pozisyonları
+    for (let i = 0; i < columns; i++) {
+        drops[i] = Math.floor(Math.random() * -100); // Rastgele başlangıç pozisyonları
+    }
+
+    function draw() {
+        // Yarı saydam siyah arkaplan (iz efekti için)
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Matrix yağmuru çiz
+        ctx.fillStyle = '#0F0';
+        ctx.font = `bold ${fontSize}px 'Share Tech Mono'`;
+
+        for (let i = 0; i < drops.length; i++) {
+            // Rastgele karakter seç
+            const char = charArray[Math.floor(Math.random() * charArray.length)];
+            
+            // Parlak efekt için
+            const y = drops[i] * fontSize;
+            if (y > 0) {
+                // Baştaki karakteri daha parlak yap
+                ctx.fillStyle = '#0F0';
+                ctx.fillText(char, i * fontSize, y);
+                
+                // Arkasından gelen karakterleri daha soluk yap
+                for (let j = 1; j < 5; j++) {
+                    const opacity = 1 - (j * 0.2);
+                    ctx.fillStyle = `rgba(0, 255, 0, ${opacity})`;
+                    ctx.fillText(
+                        charArray[Math.floor(Math.random() * charArray.length)],
+                        i * fontSize,
+                        y - (j * fontSize)
+                    );
+                }
+            }
+
+            // Karakterleri aşağı kaydır
+            drops[i]++;
+
+            // Ekranın altına ulaşınca yukarı taşı
+            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+        }
+
+        requestAnimationFrame(draw);
+    }
+
+    draw();
+}
+
+// Sayfa yüklendiğinde Matrix efektini başlat
+document.addEventListener('DOMContentLoaded', initMatrixRain); 
