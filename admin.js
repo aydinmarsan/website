@@ -82,14 +82,11 @@ async function saveNote() {
     };
 
     try {
-        // Firebase'e kaydet
         await db.collection('notes').add(newNote);
         
         // Formu temizle
         document.getElementById('noteTitle').value = '';
         document.getElementById('noteText').value = '';
-        
-        loadNotes();
     } catch (error) {
         console.error("Error adding note: ", error);
         alert('Error saving note. Please try again.');
@@ -97,37 +94,36 @@ async function saveNote() {
 }
 
 // Notları yükleme
-async function loadNotes() {
+function loadNotes() {
     const notesList = document.getElementById('notesList');
-    notesList.innerHTML = '';
     
-    try {
-        // Firebase'den notları çek
-        const snapshot = await db.collection('notes')
-            .orderBy('timestamp', 'desc')
-            .get();
-
-        snapshot.forEach(doc => {
-            const note = doc.data();
-            const noteElement = document.createElement('div');
-            noteElement.className = 'note-item';
-            noteElement.innerHTML = `
-                <div class="note-content">
-                    <div class="note-title">${note.title}</div>
-                    <div class="note-text">${note.text}</div>
-                    <div class="note-date">${note.date}</div>
-                </div>
-                <div class="note-actions">
-                    <button onclick="editNote('${doc.id}')">EDIT</button>
-                    <button onclick="deleteNote('${doc.id}')">DELETE</button>
-                </div>
-            `;
-            notesList.appendChild(noteElement);
+    // Gerçek zamanlı dinleme
+    db.collection('notes')
+        .orderBy('timestamp', 'desc')
+        .onSnapshot((snapshot) => {
+            notesList.innerHTML = '';
+            
+            snapshot.forEach(doc => {
+                const note = doc.data();
+                const noteElement = document.createElement('div');
+                noteElement.className = 'note-item';
+                noteElement.innerHTML = `
+                    <div class="note-content">
+                        <div class="note-title">${note.title}</div>
+                        <div class="note-text">${note.text}</div>
+                        <div class="note-date">${note.date}</div>
+                    </div>
+                    <div class="note-actions">
+                        <button onclick="editNote('${doc.id}')">EDIT</button>
+                        <button onclick="deleteNote('${doc.id}')">DELETE</button>
+                    </div>
+                `;
+                notesList.appendChild(noteElement);
+            });
+        }, (error) => {
+            console.error("Error loading notes: ", error);
+            alert('Error loading notes. Please refresh the page.');
         });
-    } catch (error) {
-        console.error("Error loading notes: ", error);
-        alert('Error loading notes. Please refresh the page.');
-    }
 }
 
 // Not düzenleme
