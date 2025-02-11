@@ -42,6 +42,9 @@
                 <button class="pip-tab" data-tab="files">
                     <i class="fas fa-folder"></i> FILES
                 </button>
+                <button class="pip-tab" data-tab="trash">
+                    <i class="fas fa-trash"></i> TRASH
+                </button>
                 <button class="pip-tab" data-tab="terminal">
                     <i class="fas fa-terminal"></i> TERMINAL
                 </button>
@@ -120,6 +123,19 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Trash Tab -->
+                <div class="pip-tab-content" id="trash-content">
+                    <div class="trash-header">
+                        <h2 class="section-title">TRASH</h2>
+                        <div class="trash-actions">
+                            <button class="pip-btn warning-btn" id="emptyTrashBtn">
+                                <i class="fas fa-trash-alt"></i> EMPTY TRASH
+                            </button>
+                        </div>
+                    </div>
+                    <div class="trash-list" id="trashList"></div>
                 </div>
 
                 <!-- Terminal Tab -->

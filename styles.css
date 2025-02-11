@@ -2744,3 +2744,41 @@ textarea.matrix-input {
     box-shadow: 0 0 15px rgba(51, 255, 0, 0.3);
 }
 
+/* Trash Styles */
+.trash-item {
+    border-left: 4px solid #ff3333;
+}
+
+.trash-item .days-left {
+    color: #ff3333;
+    font-size: 0.8rem;
+    margin-left: 10px;
+}
+
+.trash-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.warning-btn {
+    background: rgba(255, 51, 51, 0.1);
+    border-color: #ff3333;
+    color: #ff3333;
+}
+
+.warning-btn:hover {
+    background: rgba(255, 51, 51, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(255, 51, 51, 0.3);
+}
+
+.restore {
+    background: rgba(51, 255, 0, 0.1);
+}
+
+.restore:hover {
+    background: rgba(51, 255, 0, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(51, 255, 0, 0.3);
+}
+

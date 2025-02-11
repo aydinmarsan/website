@@ -5,6 +5,7 @@ class PipTerminal {
         this.initializeNotes();
         this.initializeFiles();
         this.initializeLinks();
+        this.initializeTrash();
         this.updateClock();
         this.checkAuth();
     }
@@ -133,39 +134,10 @@ class PipTerminal {
 
                     // Delete butonu - düzeltilmiş versiyon
                     const deleteBtn = noteBox.querySelector('.delete');
-                    deleteBtn.addEventListener('click', async (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        
-                        try {
-                            const noteId = doc.id;
-                            if (!noteId) {
-                                throw new Error('Note ID not found');
-                            }
-
-                            const confirmDelete = await this.showConfirmModal('Are you sure you want to delete this note?');
-                            if (!confirmDelete) {
-                                return;
-                            }
-
-                            console.log('Deleting note with ID:', noteId); // Debug için log
-
-                            // Firestore'dan notu sil
-                            await db.collection('notes').doc(noteId).delete();
-                            console.log('Note deleted from Firestore'); // Debug için log
-
-                            // UI'dan notu kaldır
-                            noteBox.remove();
-                            
-                            // Başarı mesajı
-                            this.printLine('Note deleted successfully', 'success');
-
-                            // Notları yenile
-                            await this.refreshNotes();
-
-                        } catch (error) {
-                            console.error('Error deleting note:', error);
-                            this.printLine(`Error deleting note: ${error.message}`, 'error');
+                    deleteBtn.addEventListener('click', async () => {
+                        const confirmed = await this.showConfirmModal('Move this note to trash?');
+                        if (confirmed) {
+                            await this.deleteNote(doc.id, data);
                         }
                     });
 
@@ -262,8 +234,12 @@ class PipTerminal {
         const cancelBtn = document.getElementById('cancelUploadBtn');
         let selectedFile = null;
 
+        // Debug için event listener'ları kontrol et
+        console.log('Initializing file upload handlers');
+
         // Dosya seçildiğinde
         fileInput.addEventListener('change', (e) => {
+            console.log('File selected:', e.target.files);
             if (e.target.files.length > 0) {
                 selectedFile = e.target.files[0];
                 this.updateSelectedFileUI(selectedFile);
@@ -273,44 +249,31 @@ class PipTerminal {
 
         // Upload butonu
         uploadBtn.addEventListener('click', async () => {
+            console.log('Upload button clicked, selected file:', selectedFile);
             if (selectedFile) {
                 document.getElementById('uploadProgress').style.display = 'block';
-                await this.handleFiles([selectedFile]);
-                selectedFile = null;
-                uploadArea.style.display = 'none';
-                fileInput.value = '';
-                document.getElementById('selectedFile').style.display = 'none';
-                uploadBtn.disabled = true;
+                try {
+                    await this.handleFiles([selectedFile]);
+                    selectedFile = null;
+                    uploadArea.style.display = 'none';
+                    fileInput.value = '';
+                    document.getElementById('selectedFile').style.display = 'none';
+                    uploadBtn.disabled = true;
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    this.printLine('Upload failed: ' + error.message, 'error');
+                }
             }
         });
 
-        // Upload alanını kapatma fonksiyonu
-        const closeUploadArea = () => {
+        // Cancel butonu
+        cancelBtn.addEventListener('click', () => {
+            console.log('Cancel button clicked');
             uploadArea.style.display = 'none';
             fileInput.value = '';
             document.getElementById('selectedFile').style.display = 'none';
             uploadBtn.disabled = true;
             selectedFile = null;
-
-            // Files sekmesine geç
-            document.querySelectorAll('.pip-tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.pip-tab-content').forEach(content => content.classList.remove('active'));
-            
-            const filesTab = document.querySelector('[data-tab="files"]');
-            const filesContent = document.getElementById('files-content');
-            
-            filesTab.classList.add('active');
-            filesContent.classList.add('active');
-        };
-
-        // Cancel butonuna tıklama
-        cancelBtn.addEventListener('click', closeUploadArea);
-
-        // Upload alanının boş kısmına tıklama
-        uploadArea.addEventListener('click', (e) => {
-            if (e.target === uploadArea) {
-                closeUploadArea();
-            }
         });
     }
 
@@ -361,25 +324,10 @@ class PipTerminal {
 
     // Dosya durum mesajını belirle
     getFileStatusMessage(file) {
-        // Dosya boyutu kontrolü
+        // Sadece dosya boyutu kontrolü
         if (file.size > 10 * 1024 * 1024) {
             return {
                 text: 'FILE TOO LARGE (MAX 10MB)',
-                type: 'error'
-            };
-        }
-
-        // Dosya türü kontrolü
-        const allowedTypes = [
-            'image/jpeg', 'image/png', 'image/gif',
-            'application/pdf', 'text/plain',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        ];
-
-        if (!allowedTypes.includes(file.type)) {
-            return {
-                text: 'UNSUPPORTED FILE TYPE',
                 type: 'error'
             };
         }
@@ -459,60 +407,9 @@ class PipTerminal {
                 // Delete butonu işlemleri
                 const deleteBtn = fileBox.querySelector('.delete');
                 deleteBtn.addEventListener('click', async () => {
-                    try {
-                        const confirmed = await this.showConfirmModal(`Are you sure you want to delete "${data.title}"?`);
-                        if (!confirmed) return;
-
-                        // Debug için log
-                        console.log('Deleting file:', {
-                            id: doc.id,
-                            title: data.title,
-                            url: data.url
-                        });
-
-                        // 1. Storage'dan dosyayı sil
-                        if (data.url) {
-                            try {
-                                // URL'den dosya adını al
-                                const urlParts = data.url.split('/');
-                                const fileName = urlParts[urlParts.length - 1].split('?')[0];
-                                
-                                // Storage referansını oluştur
-                                const storageRef = storage.ref();
-                                const fileRef = storageRef.child(`files/${fileName}`);
-                                
-                                console.log('Attempting to delete from storage:', fileName);
-                                
-                                // Dosyayı sil
-                                await fileRef.delete();
-                                console.log('File deleted from storage successfully');
-                            } catch (storageError) {
-                                console.error('Storage deletion error:', storageError);
-                            }
-                        }
-
-                        // 2. Firestore'dan dökümanı sil
-                        console.log('Attempting to delete from Firestore:', doc.id);
-                        await db.collection('notes').doc(doc.id).delete();
-                        console.log('Document deleted from Firestore successfully');
-
-                        // 3. UI'dan kaldır
-                        fileBox.remove();
-
-                        // 4. Storage kullanımını güncelle
-                        if (data.size) {
-                            this.updateStorageBar(-data.size);
-                        }
-
-                        // 5. Başarı mesajı
-                        this.printLine(`${data.title} deleted successfully`, 'success');
-                        
-                        // 6. Dosya listesini yenile
-                        await this.refreshFiles();
-
-                    } catch (error) {
-                        console.error('Delete operation failed:', error);
-                        this.printLine(`Failed to delete ${data.title}: ${error.message}`, 'error');
+                    const confirmed = await this.showConfirmModal('Move this file to trash?');
+                    if (confirmed) {
+                        await this.deleteFile(doc.id, data);
                     }
                 });
 
@@ -535,34 +432,31 @@ class PipTerminal {
     }
 
     async handleFiles(files) {
-        const allowedTypes = [
-            'image/jpeg', 'image/png', 'image/gif',
-            'application/pdf', 'text/plain',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        ];
-
         for (let file of files) {
             try {
-                console.log('İşlenen dosya:', file); // Dosya bilgilerini logla
+                // Debug için dosya bilgilerini logla
+                console.log('Uploading file:', {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type
+                });
 
-                // Dosya tipi kontrolü
-                if (!allowedTypes.includes(file.type)) {
-                    throw new Error('Desteklenmeyen dosya türü');
-                }
-
-                // Dosya boyutu kontrolü (10MB limit)
+                // Sadece dosya boyutu kontrolü (10MB limit)
                 if (file.size > 10 * 1024 * 1024) {
                     throw new Error('Dosya boyutu 10MB\'dan büyük olamaz');
                 }
 
+                // Progress bar ve text elementlerini al
+                const progressBar = document.querySelector('.progress-fill');
+                const progressText = document.getElementById('progressText');
+                
                 // Progress mesajı
                 this.printLine(`${file.name} yükleniyor...`, 'info');
 
                 // Storage referansı oluştur
                 const storageRef = firebase.storage().ref();
                 const fileRef = storageRef.child(`files/${Date.now()}_${file.name}`);
-                console.log('Storage referansı oluşturuldu:', fileRef.fullPath);
+                console.log('Storage reference created:', fileRef.fullPath);
 
                 // Upload işlemi için Promise kullan
                 await new Promise((resolve, reject) => {
@@ -572,8 +466,9 @@ class PipTerminal {
                         // Progress
                         (snapshot) => {
                             const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            progressBar.style.width = `${progress}%`;
+                            progressText.textContent = `${Math.round(progress)}%`;
                             console.log('Upload progress:', progress);
-                            this.printLine(`Yükleme durumu: ${Math.round(progress)}%`, 'info');
                         },
                         // Hata
                         (error) => {
@@ -583,9 +478,9 @@ class PipTerminal {
                         // Başarılı
                         async () => {
                             try {
-                                console.log('Upload tamamlandı');
+                                console.log('Upload completed');
                                 const url = await uploadTask.snapshot.ref.getDownloadURL();
-                                console.log('Download URL alındı:', url);
+                                console.log('Download URL obtained:', url);
 
                                 // Firestore'a kaydet
                                 await db.collection('notes').add({
@@ -596,10 +491,14 @@ class PipTerminal {
                                     mimeType: file.type,
                                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                                 });
-                                console.log('Firestore\'a kaydedildi');
+                                console.log('File data saved to Firestore');
 
                                 // Storage kullanımını güncelle
                                 this.updateStorageBar(file.size);
+
+                                // Progress bar'ı tamamla
+                                progressBar.style.width = '100%';
+                                progressText.textContent = '100%';
 
                                 resolve();
                             } catch (error) {
@@ -745,57 +644,9 @@ class PipTerminal {
                 // Delete butonu işlemleri
                 const deleteBtn = fileItem.querySelector('.delete');
                 deleteBtn.addEventListener('click', async () => {
-                    try {
-                        const confirmed = await this.showConfirmModal(`Are you sure you want to delete "${data.title}"?`);
-                        if (!confirmed) return;
-
-                        // Debug için log
-                        console.log('Deleting file:', {
-                            id: doc.id,
-                            title: data.title,
-                            url: data.url
-                        });
-
-                        // 1. Storage'dan dosyayı sil
-                        if (data.url) {
-                            try {
-                                // URL'den dosya adını al
-                                const urlParts = data.url.split('/');
-                                const fileName = urlParts[urlParts.length - 1].split('?')[0];
-                                
-                                // Storage referansını oluştur
-                                const storageRef = storage.ref();
-                                const fileRef = storageRef.child(`files/${fileName}`);
-                                
-                                console.log('Attempting to delete from storage:', fileName);
-                                
-                                // Dosyayı sil
-                                await fileRef.delete();
-                                console.log('File deleted from storage successfully');
-                            } catch (storageError) {
-                                console.error('Storage deletion error:', storageError);
-                            }
-                        }
-
-                        // 2. Firestore'dan dökümanı sil
-                        console.log('Attempting to delete from Firestore:', doc.id);
-                        await db.collection('notes').doc(doc.id).delete();
-                        console.log('Document deleted from Firestore successfully');
-
-                        // 3. UI'dan kaldır
-                        fileItem.remove();
-
-                        // 4. Storage kullanımını güncelle
-                        if (data.size) {
-                            this.updateStorageBar(-data.size);
-                        }
-
-                        this.printLine(`${data.title} deleted successfully`, 'success');
-                        await this.refreshFiles();
-
-                    } catch (error) {
-                        console.error('Delete operation failed:', error);
-                        this.printLine(`Failed to delete ${data.title}: ${error.message}`, 'error');
+                    const confirmed = await this.showConfirmModal(`Are you sure you want to delete "${data.title}"?`);
+                    if (confirmed) {
+                        await this.deleteFile(doc.id, data);
                     }
                 });
 
@@ -1142,16 +993,9 @@ class PipTerminal {
 
                 // Delete butonu
                 linkBox.querySelector('.delete').addEventListener('click', async () => {
-                    const confirmed = await this.showConfirmModal(`Are you sure you want to delete "${data.title}"?`);
+                    const confirmed = await this.showConfirmModal('Move this link to trash?');
                     if (confirmed) {
-                        try {
-                            await db.collection('notes').doc(doc.id).delete();
-                            linkBox.remove();
-                            this.printLine(`Link "${data.title}" deleted successfully`, 'success');
-                            await this.refreshLinks();
-                        } catch (error) {
-                            this.printLine(`Error deleting link: ${error.message}`, 'error');
-                        }
+                        await this.deleteLink(doc.id, data);
                     }
                 });
 
@@ -1223,6 +1067,320 @@ class PipTerminal {
         } catch (error) {
             console.error('Error saving link:', error);
             this.printLine('Error saving link: ' + error.message, 'error');
+        }
+    }
+
+    // Geri dönüşüm kutusu yönetimi
+    async initializeTrash() {
+        // Empty Trash butonu
+        document.getElementById('emptyTrashBtn').addEventListener('click', async () => {
+            const confirmed = await this.showConfirmModal('Are you sure you want to permanently delete all items in trash?');
+            if (confirmed) {
+                await this.emptyTrash();
+            }
+        });
+
+        // Otomatik temizleme için kontrol
+        this.checkTrashExpiry();
+    }
+
+    // Öğeyi çöp kutusuna taşı
+    async moveToTrash(item) {
+        try {
+            const trashData = {
+                ...item,
+                deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                originalCollection: 'notes',
+                status: 'trash'
+            };
+
+            // Çöp kutusuna ekle
+            await db.collection('trash').add(trashData);
+            
+            // Orijinal öğeyi sil
+            await db.collection('notes').doc(item.id).delete();
+            
+            this.printLine(`${item.title || 'Item'} moved to trash`, 'info');
+            await this.refreshTrash();
+        } catch (error) {
+            console.error('Error moving to trash:', error);
+            this.printLine(`Error moving to trash: ${error.message}`, 'error');
+        }
+    }
+
+    // Çöp kutusunu yenile
+    async refreshTrash() {
+        const trashList = document.getElementById('trashList');
+        trashList.innerHTML = '<div class="loading">Loading trash items...</div>';
+        
+        try {
+            const snapshot = await db.collection('trash')
+                .orderBy('deletedAt', 'desc')
+                .get();
+            
+            trashList.innerHTML = '';
+            
+            if (snapshot.empty) {
+                trashList.innerHTML = '<div class="empty-message">Trash is empty</div>';
+                return;
+            }
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const daysLeft = this.calculateDaysLeft(data.deletedAt?.toDate());
+                
+                const itemBox = document.createElement('div');
+                itemBox.className = 'stored-item trash-item';
+                itemBox.innerHTML = `
+                    <div class="item-header">
+                        <div class="item-title">
+                            <i class="fas ${this.getItemIcon(data.type)}"></i>
+                            ${data.title || 'Untitled'}
+                            <span class="item-type">[${data.type.toUpperCase()}]</span>
+                        </div>
+                        <div class="item-date">
+                            <i class="fas fa-clock"></i>
+                            Deleted: ${new Date(data.deletedAt?.toDate()).toLocaleString()}
+                            <span class="days-left">(${daysLeft} days left)</span>
+                        </div>
+                    </div>
+                    <div class="item-content">
+                        ${this.getItemPreview(data)}
+                    </div>
+                    <div class="item-actions">
+                        <button class="note-btn restore">
+                            <i class="fas fa-undo"></i> RESTORE
+                        </button>
+                        <button class="note-btn delete">
+                            <i class="fas fa-trash"></i> DELETE PERMANENTLY
+                        </button>
+                    </div>
+                `;
+
+                // Restore butonu
+                itemBox.querySelector('.restore').addEventListener('click', async () => {
+                    await this.restoreFromTrash(doc.id, data);
+                });
+
+                // Delete butonu
+                itemBox.querySelector('.delete').addEventListener('click', async () => {
+                    const confirmed = await this.showConfirmModal('This item will be permanently deleted. Continue?');
+                    if (confirmed) {
+                        await this.permanentlyDelete(doc.id, data);
+                    }
+                });
+
+                trashList.appendChild(itemBox);
+            });
+        } catch (error) {
+            console.error('Error loading trash:', error);
+            trashList.innerHTML = '<div class="error-message">Error loading trash items.</div>';
+        }
+    }
+
+    // Çöp kutusundan geri yükle
+    async restoreFromTrash(trashId, data) {
+        try {
+            // Orijinal koleksiyona geri yükle
+            const { status, deletedAt, originalCollection, ...restoreData } = data;
+            await db.collection(originalCollection).add(restoreData);
+            
+            // Çöp kutusundan sil
+            await db.collection('trash').doc(trashId).delete();
+            
+            this.printLine(`${data.title} restored successfully`, 'success');
+            await this.refreshTrash();
+            
+            // İlgili listeyi güncelle
+            if (data.type === 'note') await this.refreshNotes();
+            else if (data.type === 'file') await this.refreshFiles();
+            else if (data.type === 'link') await this.refreshLinks();
+        } catch (error) {
+            console.error('Error restoring item:', error);
+            this.printLine(`Error restoring item: ${error.message}`, 'error');
+        }
+    }
+
+    // Kalıcı olarak sil
+    async permanentlyDelete(trashId, data) {
+        try {
+            // Dosya ise storage'dan da sil
+            if (data.type === 'file' && data.url) {
+                try {
+                    const urlParts = data.url.split('/');
+                    const fileName = urlParts[urlParts.length - 1].split('?')[0];
+                    const storageRef = storage.ref();
+                    const fileRef = storageRef.child(`files/${fileName}`);
+                    await fileRef.delete();
+                } catch (storageError) {
+                    console.error('Storage deletion error:', storageError);
+                }
+            }
+
+            // Firestore'dan sil
+            await db.collection('trash').doc(trashId).delete();
+            
+            this.printLine(`${data.title} permanently deleted`, 'success');
+            await this.refreshTrash();
+        } catch (error) {
+            console.error('Error deleting item:', error);
+            this.printLine(`Error deleting item: ${error.message}`, 'error');
+        }
+    }
+
+    // Çöp kutusunu boşalt
+    async emptyTrash() {
+        try {
+            const snapshot = await db.collection('trash').get();
+            
+            const batch = db.batch();
+            snapshot.docs.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            
+            await batch.commit();
+            
+            this.printLine('Trash emptied successfully', 'success');
+            await this.refreshTrash();
+        } catch (error) {
+            console.error('Error emptying trash:', error);
+            this.printLine(`Error emptying trash: ${error.message}`, 'error');
+        }
+    }
+
+    // 30 günlük süreyi kontrol et
+    async checkTrashExpiry() {
+        try {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            
+            const snapshot = await db.collection('trash')
+                .where('deletedAt', '<=', thirtyDaysAgo)
+                .get();
+            
+            if (!snapshot.empty) {
+                const batch = db.batch();
+                snapshot.docs.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                await batch.commit();
+                this.printLine(`${snapshot.size} expired items removed from trash`, 'info');
+            }
+        } catch (error) {
+            console.error('Error checking trash expiry:', error);
+        }
+    }
+
+    // Kalan günleri hesapla
+    calculateDaysLeft(deletedDate) {
+        if (!deletedDate) return 30;
+        
+        const now = new Date();
+        const expiryDate = new Date(deletedDate);
+        expiryDate.setDate(expiryDate.getDate() + 30);
+        
+        const daysLeft = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+        return Math.max(0, daysLeft);
+    }
+
+    // Öğe tipine göre ikon belirle
+    getItemIcon(type) {
+        switch (type) {
+            case 'note': return 'fa-sticky-note';
+            case 'file': return 'fa-file';
+            case 'link': return 'fa-link';
+            default: return 'fa-file';
+        }
+    }
+
+    // Öğe önizlemesi oluştur
+    getItemPreview(data) {
+        switch (data.type) {
+            case 'note':
+                return `<div class="note-preview">${data.content}</div>`;
+            case 'file':
+                return `
+                    <div class="file-info">
+                        <span class="file-size">Size: ${this.formatFileSize(data.size)}</span>
+                        <span class="file-type">Type: ${data.mimeType || 'Unknown'}</span>
+                    </div>
+                `;
+            case 'link':
+                return `
+                    <div class="link-url">
+                        <a href="${data.url}" target="_blank" class="link-preview">
+                            <i class="fas fa-external-link-alt"></i>
+                            ${data.url}
+                        </a>
+                    </div>
+                    ${data.description ? `<div class="link-description">${data.description}</div>` : ''}
+                `;
+            default:
+                return '';
+        }
+    }
+
+    // Not silme fonksiyonunu güncelle
+    async deleteNote(noteId, noteData) {
+        try {
+            // Önce çöp kutusuna taşı
+            await this.moveToTrash({
+                ...noteData,
+                id: noteId,
+                type: 'note'
+            });
+
+            // Başarı mesajı
+            this.printLine('Note moved to trash', 'success');
+            
+            // Notları yenile
+            await this.refreshNotes();
+        } catch (error) {
+            console.error('Error deleting note:', error);
+            this.printLine(`Error deleting note: ${error.message}`, 'error');
+        }
+    }
+
+    // Link silme fonksiyonunu güncelle
+    async deleteLink(linkId, linkData) {
+        try {
+            // Önce çöp kutusuna taşı
+            await this.moveToTrash({
+                ...linkData,
+                id: linkId,
+                type: 'link'
+            });
+
+            // Başarı mesajı
+            this.printLine('Link moved to trash', 'success');
+            
+            // Linkleri yenile
+            await this.refreshLinks();
+        } catch (error) {
+            console.error('Error deleting link:', error);
+            this.printLine(`Error deleting link: ${error.message}`, 'error');
+        }
+    }
+
+    // Dosya silme fonksiyonunu güncelle
+    async deleteFile(fileId, fileData) {
+        try {
+            // Önce çöp kutusuna taşı
+            await this.moveToTrash({
+                ...fileData,
+                id: fileId,
+                type: 'file'
+            });
+
+            // Başarı mesajı
+            this.printLine('File moved to trash', 'success');
+            
+            // Dosyaları yenile
+            await this.refreshFiles();
+        } catch (error) {
+            console.error('Error deleting file:', error);
+            this.printLine(`Error deleting file: ${error.message}`, 'error');
         }
     }
 }
