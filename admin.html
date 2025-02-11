@@ -66,12 +66,45 @@
                     </div>
                     <div class="files-list" id="filesList"></div>
                     <div class="upload-area" id="uploadArea" style="display: none;">
-                        <input type="file" id="fileInput" multiple>
-                        <div class="upload-text">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <span>DROP FILES HERE OR CLICK TO UPLOAD</span>
+                        <div class="upload-container">
+                            <div class="upload-header">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>UPLOAD FILE</span>
+                            </div>
+                            <div class="upload-content">
+                                <label for="fileInput" class="file-select-btn">
+                                    <i class="fas fa-folder-open"></i>
+                                    SELECT FILE
+                                </label>
+                                <input type="file" id="fileInput" hidden>
+                                <div class="selected-file" id="selectedFile" style="display: none;">
+                                    <div class="file-icon">
+                                        <i class="fas fa-file"></i>
+                                    </div>
+                                    <div class="file-details">
+                                        <div class="file-name" id="fileName">filename.txt</div>
+                                        <div class="file-info">
+                                            <span class="file-size" id="fileSize">0 KB</span>
+                                            <span class="file-type" id="fileType">text/plain</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="upload-actions">
+                                <button class="pip-btn upload-btn" id="uploadNowBtn" disabled>
+                                    <i class="fas fa-upload"></i> UPLOAD
+                                </button>
+                                <button class="pip-btn cancel-btn" id="cancelUploadBtn">
+                                    <i class="fas fa-times"></i> CANCEL
+                                </button>
+                            </div>
+                            <div id="uploadProgress" class="upload-progress" style="display: none;">
+                                <div class="progress-bar">
+                                    <div class="progress-fill"></div>
+                                </div>
+                                <div class="progress-text">Uploading: <span id="progressText">0%</span></div>
+                            </div>
                         </div>
-                        <div id="uploadProgress"></div>
                     </div>
                 </div>
 
@@ -198,6 +231,32 @@
                 </button>
                 <button class="pip-btn confirm-no">
                     <i class="fas fa-times"></i> NO
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Confirmation Modal -->
+    <div class="pip-confirm-modal" id="uploadConfirmModal">
+        <div class="pip-confirm-content">
+            <div class="confirm-header">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span>CONFIRM UPLOAD</span>
+            </div>
+            <div class="confirm-message">
+                <div class="file-info">
+                    <p class="file-name">Selected file: <span id="selectedFileName">No file selected</span></p>
+                    <p class="file-size">Size: <span id="selectedFileSize">0 KB</span></p>
+                    <p class="file-type">Type: <span id="selectedFileType">Unknown</span></p>
+                </div>
+                <p class="upload-confirm-text">Do you want to upload this file?</p>
+            </div>
+            <div class="confirm-buttons">
+                <button class="pip-btn confirm-yes" id="confirmUpload">
+                    <i class="fas fa-check"></i> UPLOAD
+                </button>
+                <button class="pip-btn confirm-no" id="cancelUpload">
+                    <i class="fas fa-times"></i> CANCEL
                 </button>
             </div>
         </div>

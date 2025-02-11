@@ -281,29 +281,146 @@ class PipTerminal {
 
     // Files Management
     initializeFiles() {
-        this.refreshFiles();
-        
-        const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
-        
-        uploadArea.addEventListener('dragover', e => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
+        const uploadArea = document.getElementById('uploadArea');
+        const uploadBtn = document.getElementById('uploadNowBtn');
+        const cancelBtn = document.getElementById('cancelUploadBtn');
+        let selectedFile = null;
+
+        // Dosya seçildiğinde
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                selectedFile = e.target.files[0];
+                this.updateSelectedFileUI(selectedFile);
+                uploadBtn.disabled = false;
+            }
         });
-        
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
+
+        // Upload butonu
+        uploadBtn.addEventListener('click', async () => {
+            if (selectedFile) {
+                document.getElementById('uploadProgress').style.display = 'block';
+                await this.handleFiles([selectedFile]);
+                selectedFile = null;
+                uploadArea.style.display = 'none';
+                fileInput.value = '';
+                document.getElementById('selectedFile').style.display = 'none';
+                uploadBtn.disabled = true;
+            }
         });
-        
-        uploadArea.addEventListener('drop', e => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            this.handleFiles(e.dataTransfer.files);
+
+        // Upload alanını kapatma fonksiyonu
+        const closeUploadArea = () => {
+            uploadArea.style.display = 'none';
+            fileInput.value = '';
+            document.getElementById('selectedFile').style.display = 'none';
+            uploadBtn.disabled = true;
+            selectedFile = null;
+
+            // Files sekmesine geç
+            document.querySelectorAll('.pip-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.pip-tab-content').forEach(content => content.classList.remove('active'));
+            
+            const filesTab = document.querySelector('[data-tab="files"]');
+            const filesContent = document.getElementById('files-content');
+            
+            filesTab.classList.add('active');
+            filesContent.classList.add('active');
+        };
+
+        // Cancel butonuna tıklama
+        cancelBtn.addEventListener('click', closeUploadArea);
+
+        // Upload alanının boş kısmına tıklama
+        uploadArea.addEventListener('click', (e) => {
+            if (e.target === uploadArea) {
+                closeUploadArea();
+            }
         });
-        
-        fileInput.addEventListener('change', e => {
-            this.handleFiles(e.target.files);
-        });
+    }
+
+    // Seçilen dosya bilgilerini UI'da göster
+    updateSelectedFileUI(file) {
+        const selectedFileEl = document.getElementById('selectedFile');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const fileType = document.getElementById('fileType');
+
+        // Dosya bilgilerini güncelle
+        fileName.innerHTML = `<span class="status-label">FILE:</span> ${file.name}`;
+        fileSize.innerHTML = `<span class="status-label">SIZE:</span> ${this.formatFileSize(file.size)}`;
+        fileType.innerHTML = `<span class="status-label">TYPE:</span> ${this.getFileTypeInfo(file.type)}`;
+
+        // Status mesajını göster
+        const statusMessage = this.getFileStatusMessage(file);
+        const statusEl = document.createElement('div');
+        statusEl.className = 'file-status';
+        statusEl.innerHTML = `
+            <div class="status-indicator ${statusMessage.type}"></div>
+            <span class="status-text">${statusMessage.text}</span>
+        `;
+
+        // Varsa eski status mesajını kaldır
+        const oldStatus = selectedFileEl.querySelector('.file-status');
+        if (oldStatus) oldStatus.remove();
+
+        // Yeni status mesajını ekle
+        document.querySelector('.file-details').appendChild(statusEl);
+
+        selectedFileEl.style.display = 'flex';
+    }
+
+    // Dosya türü bilgisini formatla
+    getFileTypeInfo(mimeType) {
+        const typeMap = {
+            'image/jpeg': 'JPEG Image',
+            'image/png': 'PNG Image',
+            'image/gif': 'GIF Image',
+            'application/pdf': 'PDF Document',
+            'text/plain': 'Text File',
+            'application/msword': 'Word Document',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word Document'
+        };
+        return typeMap[mimeType] || mimeType || 'Unknown Type';
+    }
+
+    // Dosya durum mesajını belirle
+    getFileStatusMessage(file) {
+        // Dosya boyutu kontrolü
+        if (file.size > 10 * 1024 * 1024) {
+            return {
+                text: 'FILE TOO LARGE (MAX 10MB)',
+                type: 'error'
+            };
+        }
+
+        // Dosya türü kontrolü
+        const allowedTypes = [
+            'image/jpeg', 'image/png', 'image/gif',
+            'application/pdf', 'text/plain',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+            return {
+                text: 'UNSUPPORTED FILE TYPE',
+                type: 'error'
+            };
+        }
+
+        return {
+            text: 'READY TO UPLOAD',
+            type: 'success'
+        };
+    }
+
+    // Upload UI'ı sıfırla
+    resetUploadUI() {
+        document.getElementById('fileInput').value = '';
+        document.getElementById('selectedFile').style.display = 'none';
+        document.getElementById('uploadProgress').style.display = 'none';
+        document.getElementById('uploadNowBtn').disabled = true;
     }
 
     async refreshFiles() {
@@ -550,137 +667,166 @@ class PipTerminal {
     }
 
     async loadStoredData() {
-        const notesContainer = document.getElementById('storedNotes');
-        const filesContainer = document.getElementById('storedFiles');
+        const storedNotes = document.getElementById('storedNotes');
+        const storedFiles = document.getElementById('storedFiles');
         
         try {
             // Notları yükle
-            const notes = await db.collection('notes')
+            const notesSnapshot = await db.collection('notes')
                 .where('type', '==', 'note')
                 .orderBy('timestamp', 'desc')
                 .get();
-                
-            notesContainer.innerHTML = '';
             
-            if (notes.empty) {
-                notesContainer.innerHTML = '<div class="empty-message">No notes found. Click "NEW NOTE" to create one.</div>';
-            } else {
-                notes.forEach(doc => {
-                    const data = doc.data();
-                    const noteDiv = document.createElement('div');
-                    noteDiv.className = 'stored-item';
-                    noteDiv.innerHTML = `
-                        <div class="item-header">
-                            <div class="item-title">
-                                <i class="fas fa-sticky-note"></i>
-                                ${data.title}
-                            </div>
-                            <div class="item-actions">
-                                <button class="note-btn edit" title="Edit">
-                                    <i class="fas fa-edit"></i> Edit
-                                </button>
-                                <button class="note-btn delete" title="Delete">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </div>
+            storedNotes.innerHTML = '';
+            notesSnapshot.forEach(doc => {
+                const data = doc.data();
+                const noteItem = document.createElement('div');
+                noteItem.className = 'stored-item note-item';
+                noteItem.innerHTML = `
+                    <div class="item-header">
+                        <div class="item-title">
+                            <i class="fas fa-sticky-note"></i>
+                            ${data.title}
                         </div>
-                        <div class="item-content">
-                            <div class="item-preview">${data.content.substring(0, 100)}...</div>
-                            <div class="item-date">
-                                <i class="fas fa-clock"></i>
-                                ${new Date(data.timestamp?.toDate()).toLocaleString()}
-                            </div>
+                        <div class="item-date">
+                            <i class="fas fa-clock"></i>
+                            ${new Date(data.timestamp?.toDate()).toLocaleString()}
                         </div>
-                    `;
+                    </div>
+                    <div class="item-content">
+                        <div class="note-preview">${data.content}</div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="note-btn edit">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="note-btn delete">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                `;
 
-                    // Edit butonu
-                    noteDiv.querySelector('.edit').addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        this.showNoteModal({...data, id: doc.id});
-                        this.toggleStoredDataPanel();
-                    });
-
-                    // Delete butonu
-                    noteDiv.querySelector('.delete').addEventListener('click', async (e) => {
-                        e.stopPropagation();
-                        if (confirm('Are you sure you want to delete this note?')) {
-                            try {
-                                await db.collection('notes').doc(doc.id).delete();
-                                await this.refreshNotes();
-                                this.loadStoredData(); // Panel'i güncelle
-                                this.printLine('Note deleted successfully', 'success');
-                            } catch (error) {
-                                this.printLine('Error deleting note: ' + error.message, 'error');
-                            }
-                        }
-                    });
-
-                    notesContainer.appendChild(noteDiv);
+                // Edit butonu
+                noteItem.querySelector('.edit').addEventListener('click', () => {
+                    this.showNoteModal({...data, id: doc.id});
+                    document.getElementById('storedDataPanel').classList.remove('open');
                 });
-            }
+
+                // Delete butonu için onay penceresi
+                noteItem.querySelector('.delete').addEventListener('click', async () => {
+                    const confirmed = await this.showConfirmModal(`Are you sure you want to delete "${data.title}"?`);
+                    if (confirmed) {
+                        try {
+                            await db.collection('notes').doc(doc.id).delete();
+                            noteItem.remove();
+                            this.printLine(`Note "${data.title}" deleted successfully`, 'success');
+                            await this.refreshNotes();
+                        } catch (error) {
+                            this.printLine(`Error deleting note: ${error.message}`, 'error');
+                        }
+                    }
+                });
+
+                storedNotes.appendChild(noteItem);
+            });
 
             // Dosyaları yükle
-            const files = await db.collection('notes')
+            const filesSnapshot = await db.collection('notes')
                 .where('type', '==', 'file')
                 .orderBy('timestamp', 'desc')
                 .get();
-                
-            filesContainer.innerHTML = '';
             
-            if (files.empty) {
-                filesContainer.innerHTML = '<div class="empty-message">No files found. Drag and drop files to upload.</div>';
-            } else {
-                files.forEach(doc => {
-                    const data = doc.data();
-                    const fileDiv = document.createElement('div');
-                    fileDiv.className = 'stored-item';
-                    fileDiv.innerHTML = `
-                        <div class="item-header">
-                            <div class="item-title">
-                                <i class="fas fa-file"></i>
-                                ${data.title}
-                            </div>
-                            <div class="item-actions">
-                                <a href="${data.url}" target="_blank" class="note-btn download">
-                                    <i class="fas fa-download"></i> Download
-                                </a>
-                                <button class="note-btn delete">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </div>
+            storedFiles.innerHTML = '';
+            filesSnapshot.forEach(doc => {
+                const data = doc.data();
+                const fileItem = document.createElement('div');
+                fileItem.className = 'stored-item';
+                fileItem.innerHTML = `
+                    <div class="item-header">
+                        <div class="item-title">
+                            <i class="fas fa-file"></i>
+                            ${data.title}
                         </div>
-                        <div class="item-content">
-                            <div class="item-date">
+                        <div class="item-actions">
+                            <a href="${data.url}" class="note-btn download" target="_blank" title="Download">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                            <button class="note-btn delete" title="Delete">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                    <div class="item-content">
+                        <div class="item-info">
+                            <span class="file-size">Size: ${this.formatFileSize(data.size)}</span>
+                            <span class="file-date">
                                 <i class="fas fa-clock"></i>
                                 ${new Date(data.timestamp?.toDate()).toLocaleString()}
-                            </div>
+                            </span>
                         </div>
-                    `;
+                    </div>
+                `;
 
-                    // Delete butonu
-                    fileDiv.querySelector('.delete').addEventListener('click', async (e) => {
-                        e.stopPropagation();
-                        if (confirm('Are you sure you want to delete this file?')) {
+                // Delete butonu işlemleri
+                const deleteBtn = fileItem.querySelector('.delete');
+                deleteBtn.addEventListener('click', async () => {
+                    try {
+                        const confirmed = await this.showConfirmModal(`Are you sure you want to delete "${data.title}"?`);
+                        if (!confirmed) return;
+
+                        // Debug için log
+                        console.log('Deleting file:', {
+                            id: doc.id,
+                            title: data.title,
+                            url: data.url
+                        });
+
+                        // 1. Storage'dan dosyayı sil
+                        if (data.url) {
                             try {
-                                // Storage'dan dosyayı sil
-                                const storageRef = firebase.storage().refFromURL(data.url);
-                                await storageRef.delete();
+                                // URL'den dosya adını al
+                                const urlParts = data.url.split('/');
+                                const fileName = urlParts[urlParts.length - 1].split('?')[0];
                                 
-                                // Database'den kaydı sil
-                                await db.collection('notes').doc(doc.id).delete();
+                                // Storage referansını oluştur
+                                const storageRef = storage.ref();
+                                const fileRef = storageRef.child(`files/${fileName}`);
                                 
-                                await this.refreshFiles();
-                                this.loadStoredData(); // Panel'i güncelle
-                                this.printLine('File deleted successfully', 'success');
-                            } catch (error) {
-                                this.printLine('Error deleting file: ' + error.message, 'error');
+                                console.log('Attempting to delete from storage:', fileName);
+                                
+                                // Dosyayı sil
+                                await fileRef.delete();
+                                console.log('File deleted from storage successfully');
+                            } catch (storageError) {
+                                console.error('Storage deletion error:', storageError);
                             }
                         }
-                    });
 
-                    filesContainer.appendChild(fileDiv);
+                        // 2. Firestore'dan dökümanı sil
+                        console.log('Attempting to delete from Firestore:', doc.id);
+                        await db.collection('notes').doc(doc.id).delete();
+                        console.log('Document deleted from Firestore successfully');
+
+                        // 3. UI'dan kaldır
+                        fileItem.remove();
+
+                        // 4. Storage kullanımını güncelle
+                        if (data.size) {
+                            this.updateStorageBar(-data.size);
+                        }
+
+                        this.printLine(`${data.title} deleted successfully`, 'success');
+                        await this.refreshFiles();
+
+                    } catch (error) {
+                        console.error('Delete operation failed:', error);
+                        this.printLine(`Failed to delete ${data.title}: ${error.message}`, 'error');
+                    }
                 });
-            }
+
+                storedFiles.appendChild(fileItem);
+            });
+
         } catch (error) {
             console.error('Error loading stored data:', error);
             this.printLine('Error loading stored data: ' + error.message, 'error');
@@ -692,11 +838,49 @@ class PipTerminal {
         if (output) {
             const line = document.createElement('div');
             line.className = `output-line ${type}`;
-            line.textContent = text;
+            
+            const now = new Date();
+            const time = now.toLocaleTimeString('tr-TR', { 
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+
+            // Log formatını oluştur
+            let logText = `[${time}] `;
+            if (type && type !== 'muted') {
+                logText += `[${type.toUpperCase()}] `;
+            }
+            logText += text;
+
+            line.textContent = logText;
+
+            // Özel stiller
+            if (type === 'error') {
+                line.style.color = '#ff3333';
+            } else if (type === 'success') {
+                line.style.color = '#33ff33';
+            } else if (type === 'info') {
+                line.style.color = '#3399ff';
+            } else if (type === 'muted') {
+                line.style.opacity = '0.7';
+            }
+
             output.appendChild(line);
             output.scrollTop = output.scrollHeight;
+
+            // Firebase'e kaydet
+            try {
+                this.logsRef.add({
+                    text: text,
+                    type: type,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) {
+                console.error('Error saving log:', error);
+            }
         }
-        console.log(`[${type}] ${text}`);
     }
 
     // Confirmation modal fonksiyonu
@@ -731,6 +915,181 @@ class PipTerminal {
             
             modal.style.display = 'block';
         });
+    }
+
+    // Dosya önizleme fonksiyonu
+    showFilePreview(file) {
+        const preview = document.getElementById('filePreview');
+        const fileName = document.getElementById('previewFileName');
+        const fileSize = document.getElementById('previewFileSize');
+        const fileType = document.getElementById('previewFileType');
+
+        fileName.textContent = file.name;
+        fileSize.textContent = this.formatFileSize(file.size);
+        fileType.textContent = file.type || 'Unknown';
+
+        preview.style.display = 'block';
+    }
+
+    // Terminal yönetimi
+    initializeTerminal() {
+        // Terminal log koleksiyonunu referans al
+        this.logsRef = db.collection('terminal_logs');
+        
+        // Sayfa yüklendiğinde logları yükle
+        this.loadLogs();
+        
+        // Terminal input'unu dinle
+        const input = document.getElementById('terminalInput');
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const command = input.value;
+                input.value = '';
+                this.executeCommand(command);
+            }
+        });
+    }
+
+    // Log kayıtlarını yükle
+    async loadLogs() {
+        try {
+            const snapshot = await this.logsRef
+                .orderBy('timestamp', 'desc')
+                .limit(100)  // Son 100 log
+                .get();
+
+            const output = document.getElementById('output');
+            output.innerHTML = '';  // Mevcut logları temizle
+
+            // Logları tersten sırala (eskiden yeniye)
+            const logs = [];
+            snapshot.forEach(doc => {
+                logs.unshift(doc.data());
+            });
+
+            // Logları ekrana yazdır
+            logs.forEach(log => {
+                const line = document.createElement('div');
+                line.className = `output-line ${log.type}`;
+                line.textContent = `[${new Date(log.timestamp?.toDate()).toLocaleTimeString('tr-TR', { hour12: false })}] ${log.type ? `[${log.type.toUpperCase()}] ` : ''}${log.text}`;
+                output.appendChild(line);
+            });
+
+            // En alta kaydır
+            output.scrollTop = output.scrollHeight;
+        } catch (error) {
+            console.error('Error loading logs:', error);
+        }
+    }
+
+    // Terminal komutlarını işle
+    async executeCommand(command) {
+        if (!command.trim()) return;
+
+        // Komutu loglara ekle
+        await this.printLine(`> ${command}`, 'command');
+
+        // Komutları parçala (argümanlar için)
+        const args = command.split(' ');
+        const cmd = args[0].toLowerCase();
+
+        try {
+            switch (cmd) {
+                case 'clear':
+                    document.getElementById('output').innerHTML = '';
+                    break;
+
+                case 'help':
+                    this.printLine('Available commands:', 'info');
+                    this.printLine('clear          - Clear terminal screen', 'info');
+                    this.printLine('help           - Show this help message', 'info');
+                    this.printLine('time           - Show current time', 'info');
+                    this.printLine('echo [text]    - Print text to terminal', 'info');
+                    this.printLine('calc [expr]    - Calculate mathematical expression', 'info');
+                    this.printLine('js [code]      - Execute JavaScript code', 'info');
+                    this.printLine('color [name]   - Change terminal text color', 'info');
+                    this.printLine('history        - Show command history', 'info');
+                    this.printLine('stats          - Show system statistics', 'info');
+                    break;
+
+                case 'time':
+                    const now = new Date();
+                    this.printLine(now.toLocaleString('tr-TR'), 'success');
+                    break;
+
+                case 'echo':
+                    const text = args.slice(1).join(' ');
+                    this.printLine(text);
+                    break;
+
+                case 'calc':
+                    const expr = args.slice(1).join(' ');
+                    try {
+                        // Güvenli hesaplama için Function yerine math.js gibi bir kütüphane kullanılabilir
+                        const result = new Function('return ' + expr)();
+                        this.printLine(`${expr} = ${result}`, 'success');
+                    } catch (error) {
+                        this.printLine('Invalid expression', 'error');
+                    }
+                    break;
+
+                case 'js':
+                    const code = args.slice(1).join(' ');
+                    try {
+                        const result = eval(code); // Not: Gerçek uygulamada eval kullanımı güvenlik riski oluşturabilir
+                        this.printLine('Result: ' + result, 'success');
+                    } catch (error) {
+                        this.printLine('Error: ' + error.message, 'error');
+                    }
+                    break;
+
+                case 'color':
+                    const color = args[1]?.toLowerCase();
+                    const validColors = ['green', 'red', 'blue', 'yellow', 'white', 'cyan', 'magenta'];
+                    if (validColors.includes(color)) {
+                        document.getElementById('output').style.color = color;
+                        this.printLine(`Terminal color changed to ${color}`, 'success');
+                    } else {
+                        this.printLine(`Valid colors: ${validColors.join(', ')}`, 'error');
+                    }
+                    break;
+
+                case 'history':
+                    const history = await this.logsRef
+                        .where('type', '==', 'command')
+                        .orderBy('timestamp', 'desc')
+                        .limit(10)
+                        .get();
+
+                    this.printLine('Command history:', 'info');
+                    history.forEach(doc => {
+                        const data = doc.data();
+                        this.printLine(`${new Date(data.timestamp?.toDate()).toLocaleTimeString('tr-TR')} - ${data.text}`, 'muted');
+                    });
+                    break;
+
+                case 'stats':
+                    const stats = {
+                        browser: navigator.userAgent,
+                        platform: navigator.platform,
+                        language: navigator.language,
+                        online: navigator.onLine ? 'Yes' : 'No',
+                        memory: performance?.memory?.usedJSHeapSize ? 
+                            this.formatFileSize(performance.memory.usedJSHeapSize) : 'N/A'
+                    };
+
+                    this.printLine('System Statistics:', 'info');
+                    Object.entries(stats).forEach(([key, value]) => {
+                        this.printLine(`${key.padEnd(12)}: ${value}`, 'muted');
+                    });
+                    break;
+
+                default:
+                    this.printLine(`Unknown command: ${cmd}. Type 'help' for available commands.`, 'error');
+            }
+        } catch (error) {
+            this.printLine(`Error executing command: ${error.message}`, 'error');
+        }
     }
 }
 
