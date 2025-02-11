@@ -162,7 +162,7 @@ class PipTerminal {
                                 throw new Error('Note ID not found');
                             }
 
-                            const confirmDelete = confirm('Are you sure you want to delete this note?');
+                            const confirmDelete = await this.showConfirmModal('Are you sure you want to delete this note?');
                             if (!confirmDelete) {
                                 return;
                             }
@@ -362,8 +362,8 @@ class PipTerminal {
                 const deleteBtn = fileBox.querySelector('.delete');
                 deleteBtn.addEventListener('click', async () => {
                     try {
-                        const confirmDelete = confirm('Are you sure you want to delete this file?');
-                        if (!confirmDelete) return;
+                        const confirmed = await this.showConfirmModal(`Are you sure you want to delete "${data.title}"?`);
+                        if (!confirmed) return;
 
                         // Debug için log
                         console.log('Deleting file:', {
@@ -691,6 +691,40 @@ class PipTerminal {
             output.scrollTop = output.scrollHeight;
         }
         console.log(`[${type}] ${text}`);
+    }
+
+    // Confirmation modal fonksiyonu
+    async showConfirmModal(message) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('confirmModal');
+            const messageEl = modal.querySelector('.confirm-message');
+            messageEl.textContent = message;
+            
+            const handleYes = () => {
+                modal.style.display = 'none';
+                cleanup();
+                resolve(true);
+            };
+            
+            const handleNo = () => {
+                modal.style.display = 'none';
+                cleanup();
+                resolve(false);
+            };
+            
+            const cleanup = () => {
+                yesBtn.removeEventListener('click', handleYes);
+                noBtn.removeEventListener('click', handleNo);
+            };
+            
+            const yesBtn = modal.querySelector('.confirm-yes');
+            const noBtn = modal.querySelector('.confirm-no');
+            
+            yesBtn.addEventListener('click', handleYes);
+            noBtn.addEventListener('click', handleNo);
+            
+            modal.style.display = 'block';
+        });
     }
 }
 
