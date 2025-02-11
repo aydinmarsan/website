@@ -2686,3 +2686,61 @@ textarea.matrix-input {
     100% { transform: scale(1); opacity: 1; }
 }
 
+/* Links Tab Styles */
+.links-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.link-item {
+    background: rgba(0, 20, 0, 0.7);
+    border: 2px solid var(--pip-green);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.link-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(51, 255, 0, 0.2);
+}
+
+.link-url {
+    margin: 10px 0;
+}
+
+.link-preview {
+    color: var(--pip-green);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    word-break: break-all;
+}
+
+.link-preview:hover {
+    text-decoration: underline;
+    color: var(--pip-light);
+}
+
+.link-description {
+    color: var(--pip-light);
+    font-size: 0.9rem;
+    margin-top: 10px;
+    opacity: 0.8;
+    line-height: 1.4;
+}
+
+.visit {
+    background: rgba(51, 255, 0, 0.1);
+}
+
+.visit:hover {
+    background: rgba(51, 255, 0, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(51, 255, 0, 0.3);
+}
+

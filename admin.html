@@ -36,6 +36,9 @@
                 <button class="pip-tab active" data-tab="notes">
                     <i class="fas fa-book"></i> NOTES
                 </button>
+                <button class="pip-tab" data-tab="links">
+                    <i class="fas fa-link"></i> LINKS
+                </button>
                 <button class="pip-tab" data-tab="files">
                     <i class="fas fa-folder"></i> FILES
                 </button>
@@ -54,6 +57,17 @@
                         </button>
                     </div>
                     <div class="notes-list" id="notesList"></div>
+                </div>
+
+                <!-- Links Tab -->
+                <div class="pip-tab-content" id="links-content">
+                    <div class="links-header">
+                        <h2 class="section-title">LINKS</h2>
+                        <button class="pip-btn add-btn" id="addLinkBtn">
+                            <i class="fas fa-plus"></i> NEW LINK
+                        </button>
+                    </div>
+                    <div class="links-list" id="linksList"></div>
                 </div>
 
                 <!-- Files Tab -->
@@ -258,6 +272,20 @@
                 <button class="pip-btn confirm-no" id="cancelUpload">
                     <i class="fas fa-times"></i> CANCEL
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link Modal -->
+    <div class="pip-modal" id="linkModal">
+        <div class="pip-modal-content">
+            <h2><i class="fas fa-link"></i> ADD LINK</h2>
+            <input type="text" id="linkTitle" class="pip-input" placeholder="Link Title">
+            <input type="url" id="linkUrl" class="pip-input" placeholder="URL (https://...)">
+            <textarea id="linkDescription" class="pip-input" placeholder="Description (optional)"></textarea>
+            <div class="modal-buttons">
+                <button class="pip-btn save-btn" id="saveLinkBtn">SAVE</button>
+                <button class="pip-btn cancel-btn" id="cancelLinkBtn">CANCEL</button>
             </div>
         </div>
     </div>

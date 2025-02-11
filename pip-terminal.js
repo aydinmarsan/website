@@ -4,6 +4,7 @@ class PipTerminal {
         this.initializeTerminal();
         this.initializeNotes();
         this.initializeFiles();
+        this.initializeLinks();
         this.updateClock();
         this.checkAuth();
     }
@@ -1089,6 +1090,165 @@ class PipTerminal {
             }
         } catch (error) {
             this.printLine(`Error executing command: ${error.message}`, 'error');
+        }
+    }
+
+    // Links Management
+    async initializeLinks() {
+        // Link ekleme butonunu dinle
+        document.getElementById('addLinkBtn').addEventListener('click', () => this.showLinkModal());
+        document.getElementById('cancelLinkBtn').addEventListener('click', () => this.hideLinkModal());
+        document.getElementById('saveLinkBtn').addEventListener('click', async () => {
+            await this.saveLink();
+            await this.refreshLinks();
+        });
+
+        // Sayfa yüklendiğinde linkleri yükle
+        await this.refreshLinks();
+    }
+
+    async refreshLinks() {
+        const linksList = document.getElementById('linksList');
+        linksList.innerHTML = '<div class="loading">Loading links...</div>';
+        
+        try {
+            const snapshot = await db.collection('notes')
+                .where('type', '==', 'link')
+                .orderBy('timestamp', 'desc')
+                .get();
+            
+            linksList.innerHTML = '';
+            
+            if (snapshot.empty) {
+                linksList.innerHTML = '<div class="empty-message">No links found. Click "NEW LINK" to add one.</div>';
+                return;
+            }
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const linkBox = document.createElement('div');
+                linkBox.className = 'stored-item link-item';
+                linkBox.innerHTML = `
+                    <div class="item-header">
+                        <div class="item-title">
+                            <i class="fas fa-link"></i>
+                            ${data.title}
+                        </div>
+                        <div class="item-date">
+                            <i class="fas fa-clock"></i>
+                            ${new Date(data.timestamp?.toDate()).toLocaleString()}
+                        </div>
+                    </div>
+                    <div class="item-content">
+                        <div class="link-url">
+                            <a href="${data.url}" target="_blank" class="link-preview">
+                                <i class="fas fa-external-link-alt"></i>
+                                ${data.url}
+                            </a>
+                        </div>
+                        ${data.description ? `<div class="link-description">${data.description}</div>` : ''}
+                    </div>
+                    <div class="item-actions">
+                        <a href="${data.url}" target="_blank" class="note-btn visit">
+                            <i class="fas fa-external-link-alt"></i> VISIT
+                        </a>
+                        <button class="note-btn edit">
+                            <i class="fas fa-edit"></i> EDIT
+                        </button>
+                        <button class="note-btn delete">
+                            <i class="fas fa-trash"></i> DELETE
+                        </button>
+                    </div>
+                `;
+
+                // Edit butonu
+                linkBox.querySelector('.edit').addEventListener('click', () => {
+                    this.showLinkModal({...data, id: doc.id});
+                });
+
+                // Delete butonu
+                linkBox.querySelector('.delete').addEventListener('click', async () => {
+                    const confirmed = await this.showConfirmModal(`Are you sure you want to delete "${data.title}"?`);
+                    if (confirmed) {
+                        try {
+                            await db.collection('notes').doc(doc.id).delete();
+                            linkBox.remove();
+                            this.printLine(`Link "${data.title}" deleted successfully`, 'success');
+                            await this.refreshLinks();
+                        } catch (error) {
+                            this.printLine(`Error deleting link: ${error.message}`, 'error');
+                        }
+                    }
+                });
+
+                linksList.appendChild(linkBox);
+            });
+        } catch (error) {
+            console.error('Error loading links:', error);
+            linksList.innerHTML = '<div class="error-message">Error loading links.</div>';
+            this.printLine('Error loading links: ' + error.message, 'error');
+        }
+    }
+
+    showLinkModal(link = null) {
+        const modal = document.getElementById('linkModal');
+        const titleInput = document.getElementById('linkTitle');
+        const urlInput = document.getElementById('linkUrl');
+        const descInput = document.getElementById('linkDescription');
+        
+        if (link) {
+            titleInput.value = link.title;
+            urlInput.value = link.url;
+            descInput.value = link.description || '';
+            modal.dataset.linkId = link.id;
+        } else {
+            titleInput.value = '';
+            urlInput.value = '';
+            descInput.value = '';
+            delete modal.dataset.linkId;
+        }
+        
+        modal.style.display = 'block';
+    }
+
+    hideLinkModal() {
+        const modal = document.getElementById('linkModal');
+        modal.style.display = 'none';
+        delete modal.dataset.linkId;
+    }
+
+    async saveLink() {
+        const title = document.getElementById('linkTitle').value.trim();
+        const url = document.getElementById('linkUrl').value.trim();
+        const description = document.getElementById('linkDescription').value.trim();
+        const modal = document.getElementById('linkModal');
+        
+        if (!title || !url) {
+            this.printLine('Title and URL are required', 'error');
+            return;
+        }
+
+        try {
+            const linkData = {
+                title,
+                url,
+                description,
+                type: 'link',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (modal.dataset.linkId) {
+                await db.collection('notes').doc(modal.dataset.linkId).update(linkData);
+            } else {
+                await db.collection('notes').add(linkData);
+            }
+
+            this.hideLinkModal();
+            await this.refreshLinks();
+            this.printLine('Link saved successfully', 'success');
+        } catch (error) {
+            console.error('Error saving link:', error);
+            this.printLine('Error saving link: ' + error.message, 'error');
         }
     }
 }
