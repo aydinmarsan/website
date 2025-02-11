@@ -15,6 +15,12 @@ class PipTerminal {
     }
 
     initializeUI() {
+        // İlk yüklemede aktif sekmeyi kontrol et ve notları yükle
+        const activeTab = document.querySelector('.pip-tab.active');
+        if (activeTab && activeTab.dataset.tab === 'notes') {
+            this.refreshNotes();
+        }
+
         // Tab switching
         document.querySelectorAll('.pip-tab').forEach(tab => {
             tab.addEventListener('click', async () => {
