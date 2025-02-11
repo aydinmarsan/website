@@ -44,37 +44,11 @@ class PipTerminal {
         document.getElementById('cancelNoteBtn').addEventListener('click', () => this.hideNoteModal());
         document.getElementById('saveNoteBtn').addEventListener('click', async () => {
             await this.saveNote();
-            await this.refreshNotes(); // Notları tekrar yükle
+            await this.refreshNotes();
         });
 
         // Clock update
         setInterval(() => this.updateClock(), 1000);
-
-        // Stored Data butonu
-        const storedDataBtn = document.createElement('button');
-        storedDataBtn.className = 'pip-btn';
-        storedDataBtn.innerHTML = '<i class="fas fa-database"></i> STORED DATA';
-        storedDataBtn.addEventListener('click', () => this.toggleStoredDataPanel());
-        
-        // Terminal butonunun altına ekle
-        const terminalTab = document.querySelector('[data-tab="terminal"]');
-        terminalTab.parentNode.insertBefore(storedDataBtn, terminalTab.nextSibling);
-
-        // Panel kapatma butonu
-        document.getElementById('closePanel').addEventListener('click', () => {
-            document.getElementById('storedDataPanel').classList.remove('open');
-        });
-
-        // Panel tab switching
-        document.querySelectorAll('.panel-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
-                
-                tab.classList.add('active');
-                document.getElementById(`stored${tab.dataset.section.charAt(0).toUpperCase() + tab.dataset.section.slice(1)}`).classList.add('active');
-            });
-        });
 
         // Upload butonu kontrolü
         document.getElementById('uploadBtn').addEventListener('click', () => {
