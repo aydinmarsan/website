@@ -4360,80 +4360,117 @@ textarea.matrix-input {
         height: calc(100vh - 120px); /* Header ve sidebar yüksekliğini çıkar */
         overflow-y: auto;
     }
+
+    /* Buton Boyutları */
+    .pip-btn, .note-btn {
+        padding: 12px 16px; /* Dokunmatik için daha büyük tıklama alanı */
+        font-size: 0.9rem;
+        min-height: 44px; /* iOS için minimum dokunma alanı */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Tab Butonları */
+    .pip-tab {
+        padding: 10px 14px;
+        min-height: 44px;
+        white-space: nowrap;
+    }
+
+    /* Kartlar */
+    .stored-item {
+        padding: 10px;
+        margin-bottom: 8px;
+        min-height: auto; /* Yüksekliği içeriğe göre ayarla */
+    }
+
+    .item-header {
+        padding: 6px;
+    }
+
+    .item-title {
+        font-size: 0.9rem;
+        gap: 6px;
+    }
+
+    .item-content {
+        padding: 6px;
+        max-height: 120px; /* Mobilde daha kompakt görünüm */
+    }
+
+    .item-preview {
+        font-size: 0.8rem;
+        line-height: 1.4;
+        margin-bottom: 6px;
+    }
+
+    .item-date {
+        font-size: 0.7rem;
+    }
+
+    .item-actions {
+        padding: 6px;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    /* Modal içindeki butonlar */
+    .modal-buttons {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .modal-buttons .pip-btn {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    /* Not Ekleme Butonu */
+    #addNoteBtn {
+        padding: 10px 14px;
+        font-size: 0.9rem;
+    }
+
+    /* Priority Badge */
+    .priority-badge {
+        padding: 3px 6px;
+        font-size: 0.7rem;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+    }
+
+    /* Liste Görünümü */
+    .notes-list {
+        padding: 8px;
+    }
+
+    /* Preview Panel Butonları */
+    .close-preview {
+        padding: 12px;
+        font-size: 1.1rem;
+    }
 }
 
-/* Tablet Responsive */
-@media (min-width: 769px) and (max-width: 1024px) {
-    .stats {
-        grid-template-columns: repeat(2, 1fr);
+/* Küçük Mobil Cihazlar */
+@media (max-width: 320px) {
+    .pip-btn, .note-btn {
+        padding: 10px 12px;
+        font-size: 0.8rem;
     }
 
-    .pip-sidebar {
-        width: 150px;
+    .item-actions {
+        justify-content: center;
     }
 
-    .preview-panel {
-        width: 60%;
-    }
-
-    /* Tablet boyutunda status bölümünü göster */
-    .pip-footer {
-        display: block;
-    }
-}
-
-/* Touch Device Optimizations */
-@media (hover: none) {
-    .pip-tab:hover,
-    .pip-btn:hover,
-    .note-btn:hover {
-        transform: none;
-    }
-
-    .stored-item:hover {
-        transform: none;
-    }
-
-    .status-dot:hover {
-        transform: none;
-    }
-
-    /* Active state for touch */
-    .pip-tab:active,
-    .pip-btn:active,
-    .note-btn:active {
-        background: rgba(57, 255, 20, 0.2);
-        transform: scale(0.98);
-    }
-}
-
-/* Landscape Mode */
-@media (max-width: 768px) and (orientation: landscape) {
-    .pip-header {
-        flex-direction: row;
-    }
-
-    .header-left, .header-right {
-        width: auto;
-    }
-
-    .stats {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .network-grid,
-    .health-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-/* Safe Area for Notched Devices */
-@supports (padding: env(safe-area-inset-top)) {
-    .pip-container {
-        padding-top: env(safe-area-inset-top);
-        padding-bottom: env(safe-area-inset-bottom);
-        padding-left: env(safe-area-inset-left);
-        padding-right: env(safe-area-inset-right);
+    .priority-badge {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 4px;
     }
 }
 
