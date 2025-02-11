@@ -4069,144 +4069,160 @@ textarea.matrix-input {
 
 /* Preview Panel */
 .preview-panel {
-    position: absolute;
-    top: 0;
-    right: -400px;
-    width: 400px;
-    height: 100%;
-    background: var(--pip-dark);
-    border-left: 1px solid var(--pip-neon);
-    transition: right 0.3s ease;
+    position: fixed;
+    top: 50%;
+    right: -100%;
+    transform: translateY(-50%);
+    width: 40%;
+    height: 80vh;
+    background: linear-gradient(135deg, 
+        rgba(0, 20, 0, 0.95),
+        rgba(0, 40, 0, 0.9)
+    );
+    border: 1px solid var(--pip-neon);
+    border-left: 2px solid var(--pip-neon);
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+    overflow: hidden;
 }
 
 .preview-panel.active {
     right: 0;
+    box-shadow: -5px 0 20px rgba(57, 255, 20, 0.2);
+}
+
+/* Retro Scan Lines */
+.preview-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.1),
+        rgba(0, 0, 0, 0.1) 1px,
+        transparent 1px,
+        transparent 2px
+    );
+    pointer-events: none;
+}
+
+/* Glowing Border Effect */
+.preview-panel::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2px;
+    height: 100%;
+    background: var(--pip-neon);
+    box-shadow: 0 0 10px var(--pip-neon);
+    animation: borderPulse 2s ease-in-out infinite;
 }
 
 .preview-header {
-    padding: 15px;
+    padding: 12px;
+    background: rgba(0, 40, 0, 0.8);
     border-bottom: 1px solid var(--pip-neon);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: relative;
+}
+
+.preview-header h3 {
+    color: var(--pip-neon);
+    font-size: 1.1rem;
+    text-shadow: 0 0 5px var(--pip-neon);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.preview-header h3 i {
+    animation: iconBlink 2s infinite;
+}
+
+.close-preview {
+    background: none;
+    border: none;
+    color: var(--pip-neon);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 4px 8px;
+    transition: all 0.3s ease;
+}
+
+.close-preview:hover {
+    color: var(--pip-light);
+    text-shadow: 0 0 8px var(--pip-light);
+    transform: scale(1.1);
 }
 
 .preview-content {
-    padding: 20px;
+    padding: 16px;
+    height: calc(100% - 50px);
+    overflow-y: auto;
     color: var(--pip-light);
+    font-size: 0.9rem;
     line-height: 1.6;
 }
 
-/* Animations */
-@keyframes modalSlideIn {
-    from { transform: translateX(-100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+/* Retro Scrollbar */
+.preview-content::-webkit-scrollbar {
+    width: 8px;
 }
 
-.pip-modal-content {
-    animation: modalSlideIn 0.3s ease-out;
+.preview-content::-webkit-scrollbar-track {
+    background: rgba(0, 20, 0, 0.5);
 }
 
-/* Priority Indicator Styles */
-.stored-item {
-    position: relative;
-    overflow: hidden;
-}
-
-.priority-indicator {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 30px;
-    height: 30px;
-    transform: rotate(45deg) translate(-21px, -21px);
-    z-index: 1;
-}
-
-/* Priority Colors */
-.priority-low .priority-indicator {
-    background: linear-gradient(45deg, var(--pip-cyan) 0%, transparent 50%);
-    box-shadow: 0 0 15px var(--pip-cyan);
-    animation: glowPulse 2s infinite;
-}
-
-.priority-medium .priority-indicator {
-    background: linear-gradient(45deg, var(--pip-yellow) 0%, transparent 50%);
-    box-shadow: 0 0 15px var(--pip-yellow);
-    animation: glowPulse 2s infinite;
-}
-
-.priority-high .priority-indicator {
-    background: linear-gradient(45deg, var(--pip-magenta) 0%, transparent 50%);
-    box-shadow: 0 0 15px var(--pip-magenta);
-    animation: glowPulse 2s infinite;
-}
-
-@keyframes glowPulse {
-    0% { opacity: 0.6; }
-    50% { opacity: 1; }
-    100% { opacity: 0.6; }
-}
-
-/* Priority Badge Styles */
-.priority-badge {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    background: rgba(0, 0, 0, 0.3);
-}
-
-.priority-color {
-    width: 12px;
-    height: 12px;
-    border-radius: 2px;
-    display: inline-block;
-}
-
-/* Priority Badge Colors */
-.priority-badge.low {
-    color: var(--pip-neon);
-}
-
-.priority-badge.low .priority-color {
+.preview-content::-webkit-scrollbar-thumb {
     background: var(--pip-neon);
+    border-radius: 4px;
     box-shadow: 0 0 5px var(--pip-neon);
 }
 
-.priority-badge.medium {
-    color: var(--pip-yellow);
+.preview-content::-webkit-scrollbar-thumb:hover {
+    background: var(--pip-light);
+    box-shadow: 0 0 8px var(--pip-light);
 }
 
-.priority-badge.medium .priority-color {
-    background: var(--pip-yellow);
-    box-shadow: 0 0 5px var(--pip-yellow);
+/* Preview Content Styles */
+.preview-content h1, 
+.preview-content h2, 
+.preview-content h3 {
+    color: var(--pip-neon);
+    margin: 16px 0 8px;
+    text-shadow: 0 0 5px var(--pip-neon);
 }
 
-.priority-badge.high {
-    color: var(--pip-magenta);
+.preview-content p {
+    margin-bottom: 12px;
+    text-shadow: 0 0 2px var(--pip-light);
 }
 
-.priority-badge.high .priority-color {
-    background: var(--pip-magenta);
-    box-shadow: 0 0 5px var(--pip-magenta);
+.preview-content code {
+    background: rgba(0, 40, 0, 0.5);
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid rgba(57, 255, 20, 0.2);
+    color: var(--pip-cyan);
+    text-shadow: 0 0 3px var(--pip-cyan);
 }
 
-/* Item Actions Layout */
-.item-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px;
+/* Preview Animations */
+@keyframes borderPulse {
+    0% { opacity: 0.5; box-shadow: 0 0 5px var(--pip-neon); }
+    50% { opacity: 1; box-shadow: 0 0 15px var(--pip-neon); }
+    100% { opacity: 0.5; box-shadow: 0 0 5px var(--pip-neon); }
 }
 
-.note-btn {
-    padding: 4px 8px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
+@keyframes iconBlink {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
 }
 
