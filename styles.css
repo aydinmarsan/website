@@ -422,3 +422,88 @@ body {
     20%, 40%, 60%, 80% { transform: translateX(5px); }
 }
 
+/* Modal Stilleri */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-content {
+    background: rgba(0, 10, 0, 0.95);
+    border: 1px solid var(--matrix-green);
+    padding: 2rem;
+    border-radius: 5px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: var(--matrix-glow);
+    transform: translateY(-50px);
+    transition: transform 0.3s ease;
+}
+
+.modal.active .modal-content {
+    transform: translateY(0);
+}
+
+.modal-header {
+    color: var(--matrix-red);
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    text-shadow: 0 0 10px var(--matrix-red);
+}
+
+.modal-body {
+    color: var(--matrix-green);
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    text-shadow: var(--matrix-glow);
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.modal-buttons button {
+    background: none;
+    border: 1px solid var(--matrix-green);
+    color: var(--matrix-green);
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.modal-buttons button:hover {
+    background: var(--matrix-green);
+    color: var(--matrix-black);
+    box-shadow: var(--matrix-glow);
+}
+
+.modal-buttons button:first-child {
+    border-color: var(--matrix-red);
+    color: var(--matrix-red);
+}
+
+.modal-buttons button:first-child:hover {
+    background: var(--matrix-red);
+    color: var(--matrix-black);
+    box-shadow: 0 0 10px var(--matrix-red);
+}
+

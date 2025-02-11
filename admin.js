@@ -165,22 +165,41 @@ async function deleteNote(id) {
     }
 }
 
-// Çıkış
+// Modal göster/gizle fonksiyonları
+function showModal() {
+    const modal = document.getElementById('exitModal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('active'), 10);
+}
+
+function closeModal() {
+    const modal = document.getElementById('exitModal');
+    modal.classList.remove('active');
+    setTimeout(() => modal.style.display = 'none', 300);
+}
+
+// Çıkış fonksiyonunu güncelle
 function logout() {
-    if (confirm('Are you sure you want to exit?')) {
-        // Kapanış animasyonu
-        const adminContainer = document.querySelector('.admin-container');
-        adminContainer.style.animation = 'powerOff 1s forwards';
-        
-        // Matrix efektini yavaşça durdur
-        const canvas = document.getElementById('matrix');
-        canvas.style.transition = 'opacity 1s';
-        canvas.style.opacity = '0';
-        
-        // Local storage'ı temizle ve yönlendir
-        setTimeout(() => {
-            localStorage.removeItem('isLoggedIn');
-            window.location.href = 'index.html';
-        }, 1000);
-    }
+    showModal();
+}
+
+// Çıkışı onayla
+function confirmLogout() {
+    // Kapanış animasyonu
+    const adminContainer = document.querySelector('.admin-container');
+    adminContainer.style.animation = 'powerOff 1s forwards';
+    
+    // Matrix efektini yavaşça durdur
+    const canvas = document.getElementById('matrix');
+    canvas.style.transition = 'opacity 1s';
+    canvas.style.opacity = '0';
+    
+    // Modal'ı kapat
+    closeModal();
+    
+    // Local storage'ı temizle ve yönlendir
+    setTimeout(() => {
+        localStorage.removeItem('isLoggedIn');
+        window.location.href = 'index.html';
+    }, 1000);
 } 
