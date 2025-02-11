@@ -4349,6 +4349,17 @@ textarea.matrix-input {
         grid-template-columns: 1fr;
         gap: 8px;
     }
+
+    /* Status bölümünü gizle */
+    .pip-footer {
+        display: none;
+    }
+
+    /* Ana içerik alanını tam yüksekliğe ayarla */
+    .pip-main {
+        height: calc(100vh - 120px); /* Header ve sidebar yüksekliğini çıkar */
+        overflow-y: auto;
+    }
 }
 
 /* Tablet Responsive */
@@ -4363,6 +4374,11 @@ textarea.matrix-input {
 
     .preview-panel {
         width: 60%;
+    }
+
+    /* Tablet boyutunda status bölümünü göster */
+    .pip-footer {
+        display: block;
     }
 }
 
