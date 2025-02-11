@@ -8,6 +8,8 @@ class PipTerminal {
         this.initializeTrash();
         this.updateClock();
         this.checkAuth();
+        this.initializeNoteEditor();
+        this.initializeSystemMonitor();
     }
 
     checkAuth() {
@@ -103,7 +105,14 @@ class PipTerminal {
                     const noteBox = document.createElement('div');
                     noteBox.className = 'stored-item';
                     noteBox.dataset.noteId = doc.id;
+
+                    // Öncelik sınıfını ekle
+                    if (data.priority) {
+                        noteBox.classList.add(`priority-${data.priority}`);
+                    }
+
                     noteBox.innerHTML = `
+                        <div class="priority-indicator"></div>
                         <div class="item-header">
                             <div class="item-title">
                                 <i class="fas fa-sticky-note"></i>
@@ -116,14 +125,18 @@ class PipTerminal {
                                 <i class="fas fa-clock"></i>
                                 ${new Date(data.timestamp?.toDate()).toLocaleString()}
                             </div>
-                        </div>
-                        <div class="item-actions">
-                            <button class="note-btn edit" title="Edit">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                            <button class="note-btn delete" title="Delete">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
+                            </div>
+                            <div class="item-actions">
+                            <div class="priority-badge ${data.priority || 'medium'}">
+                                <span class="priority-color"></span>
+                                ${data.priority ? data.priority.charAt(0).toUpperCase() + data.priority.slice(1) : 'Medium'}
+                            </div>
+                                <button class="note-btn edit" title="Edit">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="note-btn delete" title="Delete">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
                         </div>
                     `;
 
@@ -184,6 +197,10 @@ class PipTerminal {
         const content = document.getElementById('noteContent').value.trim();
         const modal = document.getElementById('noteModal');
         
+        // Seçili önceliği al
+        const priorityBtn = document.querySelector('.priority-btn.active');
+        const priority = priorityBtn ? priorityBtn.dataset.priority : 'medium';
+        
         if (!title || !content) {
             this.printLine('Title and content are required', 'error');
             return;
@@ -194,6 +211,7 @@ class PipTerminal {
                 title,
                 content,
                 type: 'note',
+                priority, // Öncelik bilgisini ekle
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
@@ -364,7 +382,7 @@ class PipTerminal {
             }
 
             for (const doc of snapshot.docs) {
-                const data = doc.data();
+                    const data = doc.data();
                 const fileBox = document.createElement('div');
                 fileBox.className = 'stored-item';
                 fileBox.dataset.fileId = doc.id;
@@ -382,17 +400,17 @@ class PipTerminal {
                     <div class="item-header">
                         <div class="item-title">
                             <i class="fas ${fileIcon}"></i>
-                            ${data.title}
-                        </div>
+                                ${data.title}
+                            </div>
                         <div class="item-actions">
                             <a href="${data.url}" class="note-btn download" target="_blank" title="Download">
-                                <i class="fas fa-download"></i> Download
-                            </a>
-                            <button class="note-btn delete" title="Delete">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                                <button class="note-btn delete" title="Delete">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
                         </div>
-                    </div>
                     <div class="item-content">
                         <div class="item-info">
                             <span class="file-size">Size: ${this.formatFileSize(data.size)}</span>
@@ -400,9 +418,9 @@ class PipTerminal {
                                 <i class="fas fa-clock"></i>
                                 ${new Date(data.timestamp?.toDate()).toLocaleString()}
                             </span>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
 
                 // Delete butonu işlemleri
                 const deleteBtn = fileBox.querySelector('.delete');
@@ -434,13 +452,6 @@ class PipTerminal {
     async handleFiles(files) {
         for (let file of files) {
             try {
-                // Debug için dosya bilgilerini logla
-                console.log('Uploading file:', {
-                    name: file.name,
-                    size: file.size,
-                    type: file.type
-                });
-
                 // Sadece dosya boyutu kontrolü (10MB limit)
                 if (file.size > 10 * 1024 * 1024) {
                     throw new Error('Dosya boyutu 10MB\'dan büyük olamaz');
@@ -452,68 +463,77 @@ class PipTerminal {
                 
                 // Progress mesajı
                 this.printLine(`${file.name} yükleniyor...`, 'info');
-
-                // Storage referansı oluştur
+                
+                try {
+                    // Storage referansı oluştur
                 const storageRef = firebase.storage().ref();
                 const fileRef = storageRef.child(`files/${Date.now()}_${file.name}`);
-                console.log('Storage reference created:', fileRef.fullPath);
-
-                // Upload işlemi için Promise kullan
-                await new Promise((resolve, reject) => {
-                    const uploadTask = fileRef.put(file);
-
-                    uploadTask.on('state_changed',
-                        // Progress
-                        (snapshot) => {
-                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                            progressBar.style.width = `${progress}%`;
-                            progressText.textContent = `${Math.round(progress)}%`;
-                            console.log('Upload progress:', progress);
-                        },
-                        // Hata
-                        (error) => {
-                            console.error('Upload error:', error);
-                            reject(error);
-                        },
-                        // Başarılı
-                        async () => {
-                            try {
-                                console.log('Upload completed');
-                                const url = await uploadTask.snapshot.ref.getDownloadURL();
-                                console.log('Download URL obtained:', url);
-
-                                // Firestore'a kaydet
-                                await db.collection('notes').add({
-                                    title: file.name,
-                                    type: 'file',
-                                    url: url,
-                                    size: file.size,
-                                    mimeType: file.type,
-                                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                                });
-                                console.log('File data saved to Firestore');
-
-                                // Storage kullanımını güncelle
-                                this.updateStorageBar(file.size);
-
-                                // Progress bar'ı tamamla
-                                progressBar.style.width = '100%';
-                                progressText.textContent = '100%';
-
-                                resolve();
-                            } catch (error) {
-                                console.error('Completion error:', error);
+                    console.log('Storage reference created:', fileRef.fullPath);
+                
+                    // Upload işlemi için Promise kullan
+                const uploadTask = fileRef.put(file);
+                
+                    await new Promise((resolve, reject) => {
+                uploadTask.on('state_changed', 
+                            // Progress
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                                progressBar.style.width = `${progress}%`;
+                                progressText.textContent = `${Math.round(progress)}%`;
+                                console.log('Upload progress:', progress);
+                            },
+                            // Hata
+                            (error) => {
+                                console.error('Upload error:', error);
                                 reject(error);
-                            }
-                        }
-                    );
+                            },
+                            // Başarılı
+                            async () => {
+                                try {
+                                    console.log('Upload completed');
+                                    const url = await uploadTask.snapshot.ref.getDownloadURL();
+                                    console.log('Download URL obtained:', url);
+
+                                    // Firestore'a kaydet
+                await db.collection('notes').add({
+                    title: file.name,
+                    type: 'file',
+                                        url: url,
+                    size: file.size,
+                                        mimeType: file.type,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
+                                    // Storage kullanımını güncelle
+                                    this.updateStorageBar(file.size);
+
+                                    // Progress bar'ı tamamla
+                                    progressBar.style.width = '100%';
+                                    progressText.textContent = '100%';
+
+                                    resolve();
+                                } catch (error) {
+                                    console.error('Completion error:', error);
+                                    reject(error);
+                                }
+                            }
+                        );
+                    });
+
+                    // Upload alanını kapat
+                    document.getElementById('uploadArea').style.display = 'none';
+                    document.getElementById('fileInput').value = '';
+                    document.getElementById('selectedFile').style.display = 'none';
+                
                 // Dosya listesini güncelle
                 await this.refreshFiles();
-
+                
                 // Başarı mesajı
-                this.printLine(`${file.name} başarıyla yüklendi`, 'success');
+                    this.printLine(`${file.name} başarıyla yüklendi`, 'success');
+                
+            } catch (error) {
+                    throw new Error(`Firebase işlemi başarısız: ${error.message}`);
+                }
 
             } catch (error) {
                 console.error('Dosya işleme hatası:', error);
@@ -550,17 +570,17 @@ class PipTerminal {
                 .where('type', '==', 'note')
                 .orderBy('timestamp', 'desc')
                 .get();
-            
+                
             storedNotes.innerHTML = '';
             notesSnapshot.forEach(doc => {
-                const data = doc.data();
+                    const data = doc.data();
                 const noteItem = document.createElement('div');
                 noteItem.className = 'stored-item note-item';
                 noteItem.innerHTML = `
-                    <div class="item-header">
-                        <div class="item-title">
-                            <i class="fas fa-sticky-note"></i>
-                            ${data.title}
+                        <div class="item-header">
+                            <div class="item-title">
+                                <i class="fas fa-sticky-note"></i>
+                                ${data.title}
                         </div>
                         <div class="item-date">
                             <i class="fas fa-clock"></i>
@@ -569,20 +589,20 @@ class PipTerminal {
                     </div>
                     <div class="item-content">
                         <div class="note-preview">${data.content}</div>
-                    </div>
-                    <div class="item-actions">
+                            </div>
+                            <div class="item-actions">
                         <button class="note-btn edit">
-                            <i class="fas fa-edit"></i> Edit
-                        </button>
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
                         <button class="note-btn delete">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </div>
-                `;
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                        </div>
+                    `;
 
-                // Edit butonu
+                    // Edit butonu
                 noteItem.querySelector('.edit').addEventListener('click', () => {
-                    this.showNoteModal({...data, id: doc.id});
+                        this.showNoteModal({...data, id: doc.id});
                     document.getElementById('storedDataPanel').classList.remove('open');
                 });
 
@@ -590,56 +610,56 @@ class PipTerminal {
                 noteItem.querySelector('.delete').addEventListener('click', async () => {
                     const confirmed = await this.showConfirmModal(`Are you sure you want to delete "${data.title}"?`);
                     if (confirmed) {
-                        try {
-                            await db.collection('notes').doc(doc.id).delete();
+                            try {
+                                await db.collection('notes').doc(doc.id).delete();
                             noteItem.remove();
                             this.printLine(`Note "${data.title}" deleted successfully`, 'success');
-                            await this.refreshNotes();
-                        } catch (error) {
+                                await this.refreshNotes();
+                            } catch (error) {
                             this.printLine(`Error deleting note: ${error.message}`, 'error');
+                            }
                         }
-                    }
-                });
+                    });
 
                 storedNotes.appendChild(noteItem);
-            });
+                });
 
             // Dosyaları yükle
             const filesSnapshot = await db.collection('notes')
                 .where('type', '==', 'file')
                 .orderBy('timestamp', 'desc')
                 .get();
-            
+                
             storedFiles.innerHTML = '';
             filesSnapshot.forEach(doc => {
-                const data = doc.data();
+                    const data = doc.data();
                 const fileItem = document.createElement('div');
                 fileItem.className = 'stored-item';
                 fileItem.innerHTML = `
-                    <div class="item-header">
-                        <div class="item-title">
-                            <i class="fas fa-file"></i>
-                            ${data.title}
-                        </div>
-                        <div class="item-actions">
+                        <div class="item-header">
+                            <div class="item-title">
+                                <i class="fas fa-file"></i>
+                                ${data.title}
+                            </div>
+                            <div class="item-actions">
                             <a href="${data.url}" class="note-btn download" target="_blank" title="Download">
-                                <i class="fas fa-download"></i> Download
-                            </a>
+                                    <i class="fas fa-download"></i> Download
+                                </a>
                             <button class="note-btn delete" title="Delete">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="item-content">
+                        <div class="item-content">
                         <div class="item-info">
                             <span class="file-size">Size: ${this.formatFileSize(data.size)}</span>
                             <span class="file-date">
                                 <i class="fas fa-clock"></i>
                                 ${new Date(data.timestamp?.toDate()).toLocaleString()}
                             </span>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
 
                 // Delete butonu işlemleri
                 const deleteBtn = fileItem.querySelector('.delete');
@@ -1382,6 +1402,283 @@ class PipTerminal {
             console.error('Error deleting file:', error);
             this.printLine(`Error deleting file: ${error.message}`, 'error');
         }
+    }
+
+    // Not düzenleme fonksiyonları
+    initializeNoteEditor() {
+        // Toolbar butonları
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const format = btn.dataset.format;
+                this.formatText(format);
+                btn.classList.toggle('active');
+            });
+        });
+
+        // Öncelik butonları
+        document.querySelectorAll('.priority-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // Kelime ve karakter sayacı
+        const noteContent = document.getElementById('noteContent');
+        noteContent.addEventListener('input', () => {
+            this.updateWordCount();
+        });
+
+        // Preview butonu
+        document.getElementById('previewNoteBtn').addEventListener('click', () => {
+            this.togglePreview();
+        });
+
+        // Preview paneli kapatma
+        document.getElementById('closePreviewBtn').addEventListener('click', () => {
+            document.getElementById('previewPanel').classList.remove('active');
+        });
+
+        // Modal kapatma butonları
+        document.getElementById('closeNoteBtn').addEventListener('click', () => {
+            this.hideNoteModal();
+        });
+
+        document.getElementById('cancelNoteBtn').addEventListener('click', () => {
+            this.hideNoteModal();
+        });
+    }
+
+    // Metin formatlama fonksiyonu
+    formatText(format) {
+        const textarea = document.getElementById('noteContent');
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        const selectedText = text.substring(start, end);
+        let formattedText = '';
+        let cursorOffset = 0;
+
+        switch(format) {
+            case 'bold':
+                formattedText = selectedText ? `**${selectedText}**` : '**Kalın Metin**';
+                cursorOffset = selectedText ? 0 : 2;
+                break;
+
+            case 'italic':
+                formattedText = selectedText ? `*${selectedText}*` : '*İtalik Metin*';
+                cursorOffset = selectedText ? 0 : 1;
+                break;
+
+            case 'underline':
+                formattedText = selectedText ? `__${selectedText}__` : '__Altı Çizili Metin__';
+                cursorOffset = selectedText ? 0 : 2;
+                break;
+
+            case 'strikethrough':
+                formattedText = selectedText ? `~~${selectedText}~~` : '~~Üstü Çizili Metin~~';
+                cursorOffset = selectedText ? 0 : 2;
+                break;
+
+            case 'list-ul':
+                if (selectedText) {
+                    formattedText = selectedText.split('\n')
+                        .map(line => line.trim() ? `• ${line}` : line)
+                        .join('\n');
+                } else {
+                    formattedText = '• Liste Öğesi\n• Liste Öğesi\n• Liste Öğesi';
+                }
+                break;
+
+            case 'list-ol':
+                if (selectedText) {
+                    formattedText = selectedText.split('\n')
+                        .map((line, i) => line.trim() ? `${i + 1}. ${line}` : line)
+                        .join('\n');
+                } else {
+                    formattedText = '1. Liste Öğesi\n2. Liste Öğesi\n3. Liste Öğesi';
+                }
+                break;
+
+            case 'quote':
+                if (selectedText) {
+                    formattedText = selectedText.split('\n')
+                        .map(line => line.trim() ? `> ${line}` : line)
+                        .join('\n');
+                } else {
+                    formattedText = '> Alıntı Metni';
+                }
+                break;
+
+            case 'code':
+                if (selectedText) {
+                    formattedText = '```\n' + selectedText + '\n```';
+                } else {
+                    formattedText = '```\nKod Bloğu\n```';
+                }
+                break;
+        }
+
+        // Metni güncelle
+        textarea.value = text.substring(0, start) + formattedText + text.substring(end);
+        
+        // İmleç pozisyonunu ayarla
+        if (!selectedText) {
+            const newPosition = start + formattedText.length - cursorOffset;
+            textarea.setSelectionRange(newPosition, newPosition);
+        } else {
+            textarea.setSelectionRange(start, start + formattedText.length);
+        }
+
+        // Textarea'ya odaklan
+        textarea.focus();
+
+        // Kelime sayısını güncelle
+        this.updateWordCount();
+    }
+
+    // Kelime ve karakter sayısını güncelleme
+    updateWordCount() {
+        const content = document.getElementById('noteContent').value;
+        const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+        const charCount = content.length;
+
+        document.getElementById('wordCount').textContent = wordCount;
+        document.getElementById('charCount').textContent = charCount;
+    }
+
+    // Preview panelini aç/kapat
+    togglePreview() {
+        const previewPanel = document.getElementById('previewPanel');
+        const content = document.getElementById('noteContent').value;
+        const previewContent = document.getElementById('previewContent');
+        
+        // Markdown'ı HTML'e çevir
+        const formattedContent = this.formatMarkdown(content);
+        previewContent.innerHTML = formattedContent;
+        
+        previewPanel.classList.toggle('active');
+    }
+
+    // Markdown formatını HTML'e çevirme
+    formatMarkdown(text) {
+        // Bold
+        text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        // Italic
+        text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        // Underline
+        text = text.replace(/__(.*?)__/g, '<u>$1</u>');
+        // Strikethrough
+        text = text.replace(/~~(.*?)~~/g, '<del>$1</del>');
+        // Code blocks
+        text = text.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+        // Quotes
+        text = text.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+        // Unordered lists
+        text = text.replace(/^• (.+)$/gm, '<li>$1</li>').replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
+        // Ordered lists
+        text = text.replace(/^\d+\. (.+)$/gm, '<li>$1</li>').replace(/(<li>.*<\/li>)/g, '<ol>$1</ol>');
+        // Line breaks
+        text = text.replace(/\n/g, '<br>');
+
+        return text;
+    }
+
+    // Sistem monitörü fonksiyonları
+    initializeSystemMonitor() {
+        // İlk değerleri ayarla
+        this.updateSystemStats();
+        
+        // Her 2 saniyede bir güncelle
+        setInterval(() => this.updateSystemStats(), 2000);
+        
+        // Ağ durumunu kontrol et
+        window.addEventListener('online', () => this.updateNetworkStatus(true));
+        window.addEventListener('offline', () => this.updateNetworkStatus(false));
+    }
+
+    updateSystemStats() {
+        // CPU Kullanımı (simüle edilmiş)
+        const cpuUsage = Math.floor(Math.random() * 100);
+        document.getElementById('cpuUsage').textContent = `${cpuUsage}%`;
+        document.getElementById('cpuBar').style.width = `${cpuUsage}%`;
+        
+        // CPU Sıcaklığı (simüle edilmiş)
+        const cpuTemp = 40 + Math.floor(Math.random() * 20);
+        document.getElementById('cpuTemp').textContent = `Temp: ${cpuTemp}°C`;
+        
+        // Bellek Kullanımı (gerçek)
+        if (performance.memory) {
+            const totalMemory = Math.round(performance.memory.jsHeapSizeLimit / (1024 * 1024));
+            const usedMemory = Math.round(performance.memory.usedJSHeapSize / (1024 * 1024));
+            const memoryPercentage = Math.round((usedMemory / totalMemory) * 100);
+            
+            document.getElementById('memoryUsage').textContent = `${usedMemory}/${totalMemory} MB`;
+            document.getElementById('memoryBar').style.width = `${memoryPercentage}%`;
+            document.getElementById('memoryAvailable').textContent = 
+                `Available: ${totalMemory - usedMemory} MB`;
+        }
+        
+        // Ağ Hızı (simüle edilmiş)
+        const downloadSpeed = (Math.random() * 10).toFixed(1);
+        const uploadSpeed = (Math.random() * 5).toFixed(1);
+        document.getElementById('downloadSpeed').textContent = downloadSpeed;
+        document.getElementById('uploadSpeed').textContent = uploadSpeed;
+        
+        // Sistem Sıcaklığı (simüle edilmiş)
+        const systemTemp = 35 + Math.floor(Math.random() * 15);
+        document.getElementById('systemTemp').textContent = `${systemTemp}°C`;
+        
+        // Sistem Çalışma Süresi
+        this.updateUptime();
+        
+        // Sistem Sağlığı
+        this.updateSystemHealth(cpuTemp, systemTemp, memoryPercentage);
+    }
+
+    updateNetworkStatus(isOnline) {
+        const statusElement = document.getElementById('networkStatus');
+        const statusDot = document.querySelector('.network-item .status-dot');
+        
+        if (isOnline) {
+            statusElement.textContent = 'ONLINE';
+            statusElement.style.color = 'var(--pip-neon)';
+            statusDot?.classList.remove('critical');
+        } else {
+            statusElement.textContent = 'OFFLINE';
+            statusElement.style.color = 'var(--pip-magenta)';
+            statusDot?.classList.add('critical');
+        }
+    }
+
+    updateUptime() {
+        const now = new Date();
+        const start = new Date(localStorage.getItem('systemStartTime') || now);
+        const diff = now - start;
+        
+        const hours = Math.floor(diff / 3600000);
+        const minutes = Math.floor((diff % 3600000) / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        
+        document.getElementById('systemUptime').textContent = 
+            `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    updateSystemHealth(cpuTemp, systemTemp, memoryUsage) {
+        let status = 'OPTIMAL';
+        let color = 'var(--pip-neon)';
+        
+        if (cpuTemp > 75 || systemTemp > 45 || memoryUsage > 90) {
+            status = 'CRITICAL';
+            color = 'var(--pip-magenta)';
+        } else if (cpuTemp > 65 || systemTemp > 40 || memoryUsage > 80) {
+            status = 'WARNING';
+            color = 'var(--pip-yellow)';
+        }
+        
+        const healthElement = document.getElementById('systemHealth');
+        healthElement.textContent = status;
+        healthElement.style.color = color;
     }
 }
 

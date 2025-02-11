@@ -149,58 +149,103 @@
             </div>
         </div>
 
+        <!-- Ana içerikten sonra, pip-container'ın içine ekleyin -->
         <div class="pip-footer">
             <div class="stats">
+                <!-- CPU Status -->
                 <div class="stat">
                     <div class="stat-header">
                         <span class="stat-label">
-                            <i class="fas fa-hdd"></i>
-                            STORAGE
+                            <i class="fas fa-microchip"></i> CPU
                         </span>
-                        <span class="stat-value">45.5 GB / 100 GB</span>
+                        <span class="stat-value" id="cpuUsage">0%</span>
                     </div>
-                    <div class="stat-bar">
-                        <div class="stat-fill" id="storageBar"></div>
-                    </div>
-                    <div class="stat-details">
-                        <span>Available: 54.5 GB</span>
-                        <span>Used: 45.5 GB</span>
+                    <div class="stat-bars">
+                        <div class="stat-bar">
+                            <div class="stat-fill" id="cpuBar" style="width: 0%"></div>
+                        </div>
                     </div>
                     <div class="status-indicators">
                         <div class="status-item">
                             <span class="status-dot"></span>
-                            System
-                        </div>
-                        <div class="status-item">
-                            <span class="status-dot warning"></span>
-                            Backup
+                            <span id="cpuTemp">Temp: 45°C</span>
                         </div>
                     </div>
                 </div>
-                
+
+                <!-- Memory Status -->
                 <div class="stat">
                     <div class="stat-header">
                         <span class="stat-label">
-                            <i class="fas fa-memory"></i>
-                            MEMORY
+                            <i class="fas fa-memory"></i> MEMORY
                         </span>
-                        <span class="stat-value">6.2 GB / 8 GB</span>
+                        <span class="stat-value" id="memoryUsage">0/0 GB</span>
                     </div>
-                    <div class="stat-bar">
-                        <div class="stat-fill" style="width: 75%"></div>
-                    </div>
-                    <div class="stat-details">
-                        <span>Available: 1.8 GB</span>
-                        <span>Used: 6.2 GB</span>
+                    <div class="stat-bars">
+                        <div class="stat-bar">
+                            <div class="stat-fill" id="memoryBar" style="width: 0%"></div>
+                        </div>
                     </div>
                     <div class="status-indicators">
                         <div class="status-item">
                             <span class="status-dot"></span>
-                            RAM
+                            <span id="memoryAvailable">Available: 0 GB</span>
                         </div>
-                        <div class="status-item">
-                            <span class="status-dot critical"></span>
-                            SWAP
+                    </div>
+                </div>
+
+                <!-- Network Status -->
+                <div class="stat">
+                    <div class="stat-header">
+                        <span class="stat-label">
+                            <i class="fas fa-network-wired"></i> NETWORK
+                        </span>
+                        <span class="stat-value" id="networkStatus">ONLINE</span>
+                    </div>
+                    <div class="network-grid">
+                        <div class="network-item">
+                            <div class="network-label">Download</div>
+                            <div class="network-speed">
+                                <span id="downloadSpeed">0</span>
+                                <span class="unit">MB/s</span>
+                            </div>
+                        </div>
+                        <div class="network-item">
+                            <div class="network-label">Upload</div>
+                            <div class="network-speed">
+                                <span id="uploadSpeed">0</span>
+                                <span class="unit">MB/s</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Health -->
+                <div class="stat">
+                    <div class="stat-header">
+                        <span class="stat-label">
+                            <i class="fas fa-heartbeat"></i> SYSTEM
+                        </span>
+                        <span class="stat-value" id="systemHealth">OPTIMAL</span>
+                    </div>
+                    <div class="health-grid">
+                        <div class="health-item">
+                            <div class="health-icon">
+                                <i class="fas fa-thermometer-half"></i>
+                            </div>
+                            <div class="health-info">
+                                <div class="health-label">System Temp</div>
+                                <div class="health-value" id="systemTemp">0°C</div>
+                            </div>
+                        </div>
+                        <div class="health-item">
+                            <div class="health-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="health-info">
+                                <div class="health-label">Uptime</div>
+                                <div class="health-value" id="systemUptime">0:00:00</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -211,12 +256,93 @@
     <!-- Note Modal -->
     <div class="pip-modal" id="noteModal">
         <div class="pip-modal-content">
-            <input type="text" id="noteTitle" placeholder="Note Title" class="pip-input">
-            <textarea id="noteContent" placeholder="Note Content" class="pip-input"></textarea>
-            <div class="modal-buttons">
-                <button class="pip-btn save-btn" id="saveNoteBtn">SAVE</button>
-                <button class="pip-btn cancel-btn" id="cancelNoteBtn">CANCEL</button>
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> <span id="modalTitle">NEW NOTE</span></h2>
+                <button class="modal-close" id="closeNoteBtn">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
+            
+            <div class="note-form">
+                <div class="form-group">
+                    <label for="noteTitle">
+                        <i class="fas fa-heading"></i> TITLE
+                    </label>
+                    <input type="text" id="noteTitle" placeholder="Enter note title..." class="pip-input">
+                </div>
+
+                <div class="form-group">
+                    <label for="noteCategory">
+                        <i class="fas fa-tag"></i> CATEGORY
+                    </label>
+                    <select id="noteCategory" class="pip-input">
+                        <option value="general">General</option>
+                        <option value="work">Work</option>
+                        <option value="personal">Personal</option>
+                        <option value="important">Important</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="notePriority">
+                        <i class="fas fa-flag"></i> PRIORITY
+                    </label>
+                    <div class="priority-buttons">
+                        <button class="priority-btn" data-priority="low">
+                            <i class="fas fa-arrow-down"></i> Low
+                        </button>
+                        <button class="priority-btn" data-priority="medium">
+                            <i class="fas fa-minus"></i> Medium
+                        </button>
+                        <button class="priority-btn" data-priority="high">
+                            <i class="fas fa-arrow-up"></i> High
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="noteContent">
+                        <i class="fas fa-align-left"></i> CONTENT
+                    </label>
+                    <textarea id="noteContent" placeholder="Enter note content..." class="pip-input note-editor"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="note-meta">
+                    <span class="word-count">
+                        <i class="fas fa-font"></i> Words: <span id="wordCount">0</span>
+                    </span>
+                    <span class="char-count">
+                        <i class="fas fa-text-width"></i> Chars: <span id="charCount">0</span>
+                    </span>
+                    <span class="last-edited">
+                        <i class="fas fa-history"></i> Last edited: <span id="lastEdited">Just now</span>
+                    </span>
+                </div>
+                <div class="modal-buttons">
+                    <button class="pip-btn preview-btn" id="previewNoteBtn">
+                        <i class="fas fa-eye"></i> PREVIEW
+                    </button>
+                    <button class="pip-btn save-btn" id="saveNoteBtn">
+                        <i class="fas fa-save"></i> SAVE
+                    </button>
+                    <button class="pip-btn cancel-btn" id="cancelNoteBtn">
+                        <i class="fas fa-times"></i> CANCEL
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Note Preview Panel -->
+        <div class="preview-panel" id="previewPanel">
+            <div class="preview-header">
+                <h3><i class="fas fa-eye"></i> PREVIEW</h3>
+                <button class="close-preview" id="closePreviewBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="preview-content" id="previewContent"></div>
         </div>
     </div>
 
