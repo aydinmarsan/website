@@ -65,7 +65,7 @@ function initMatrix() {
 }
 
 // Not kaydetme
-function saveNote() {
+async function saveNote() {
     const noteTitle = document.getElementById('noteTitle').value.trim();
     const noteText = document.getElementById('noteText').value.trim();
     
@@ -74,83 +74,99 @@ function saveNote() {
         return;
     }
 
-    const notes = getNotes();
     const newNote = {
-        id: Date.now(),
         title: noteTitle,
         text: noteText,
-        date: new Date().toLocaleString()
+        date: new Date().toLocaleString(),
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    notes.push(newNote);
-    localStorage.setItem('notes', JSON.stringify(notes));
-    
-    // Formu temizle
-    document.getElementById('noteTitle').value = '';
-    document.getElementById('noteText').value = '';
-    
-    loadNotes();
+    try {
+        // Firebase'e kaydet
+        await db.collection('notes').add(newNote);
+        
+        // Formu temizle
+        document.getElementById('noteTitle').value = '';
+        document.getElementById('noteText').value = '';
+        
+        loadNotes();
+    } catch (error) {
+        console.error("Error adding note: ", error);
+        alert('Error saving note. Please try again.');
+    }
 }
 
 // Notları yükleme
-function loadNotes() {
+async function loadNotes() {
     const notesList = document.getElementById('notesList');
-    const notes = getNotes();
-    
     notesList.innerHTML = '';
     
-    notes.forEach(note => {
-        const noteElement = document.createElement('div');
-        noteElement.className = 'note-item';
-        noteElement.innerHTML = `
-            <div class="note-content">
-                <div class="note-title">${note.title}</div>
-                <div class="note-text">${note.text}</div>
-                <div class="note-date">${note.date}</div>
-            </div>
-            <div class="note-actions">
-                <button onclick="editNote(${note.id})">EDIT</button>
-                <button onclick="deleteNote(${note.id})">DELETE</button>
-            </div>
-        `;
-        notesList.appendChild(noteElement);
-    });
+    try {
+        // Firebase'den notları çek
+        const snapshot = await db.collection('notes')
+            .orderBy('timestamp', 'desc')
+            .get();
+
+        snapshot.forEach(doc => {
+            const note = doc.data();
+            const noteElement = document.createElement('div');
+            noteElement.className = 'note-item';
+            noteElement.innerHTML = `
+                <div class="note-content">
+                    <div class="note-title">${note.title}</div>
+                    <div class="note-text">${note.text}</div>
+                    <div class="note-date">${note.date}</div>
+                </div>
+                <div class="note-actions">
+                    <button onclick="editNote('${doc.id}')">EDIT</button>
+                    <button onclick="deleteNote('${doc.id}')">DELETE</button>
+                </div>
+            `;
+            notesList.appendChild(noteElement);
+        });
+    } catch (error) {
+        console.error("Error loading notes: ", error);
+        alert('Error loading notes. Please refresh the page.');
+    }
 }
 
 // Not düzenleme
-function editNote(id) {
-    const notes = getNotes();
-    const note = notes.find(n => n.id === id);
-    if (!note) return;
+async function editNote(id) {
+    try {
+        const doc = await db.collection('notes').doc(id).get();
+        const note = doc.data();
+        
+        const newTitle = prompt('Edit note title:', note.title);
+        if (newTitle === null) return;
 
-    const newTitle = prompt('Edit note title:', note.title);
-    if (newTitle === null) return;
+        const newText = prompt('Edit note text:', note.text);
+        if (newText === null) return;
 
-    const newText = prompt('Edit note text:', note.text);
-    if (newText === null) return;
+        await db.collection('notes').doc(id).update({
+            title: newTitle.trim(),
+            text: newText.trim(),
+            date: new Date().toLocaleString() + ' (edited)',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-    note.title = newTitle.trim();
-    note.text = newText.trim();
-    note.date = new Date().toLocaleString() + ' (edited)';
-    
-    localStorage.setItem('notes', JSON.stringify(notes));
-    loadNotes();
+        loadNotes();
+    } catch (error) {
+        console.error("Error editing note: ", error);
+        alert('Error editing note. Please try again.');
+    }
 }
 
 // Not silme
-function deleteNote(id) {
+async function deleteNote(id) {
     if (!confirm('Are you sure you want to delete this note?')) return;
 
-    const notes = getNotes();
-    const filteredNotes = notes.filter(note => note.id !== id);
-    
-    localStorage.setItem('notes', JSON.stringify(filteredNotes));
-    loadNotes();
-}
-
-// Notları getir
-function getNotes() {
-    return JSON.parse(localStorage.getItem('notes') || '[]');
+    try {
+        await db.collection('notes').doc(id).delete();
+        loadNotes();
+    } catch (error) {
+        console.error("Error deleting note: ", error);
+        alert('Error deleting note. Please try again.');
+    }
 }
 
 // Çıkış
