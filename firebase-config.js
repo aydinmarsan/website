@@ -17,14 +17,13 @@ const storage = firebase.storage();
 
 // Firestore ayarları
 db.settings({
-    cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
-    merge: true
+    cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
 });
 
-// Storage için CORS ayarları
-storage.setCustomAuthHeader({
-    'Access-Control-Allow-Origin': '*'
-});
+// Storage için CORS ayarlarını kaldır (gereksiz ve hatalı)
+// storage.setCustomAuthHeader({
+//     'Access-Control-Allow-Origin': '*'
+// });
 
 // Offline kalıcılığı etkinleştir
 db.enablePersistence()
