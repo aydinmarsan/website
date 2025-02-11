@@ -1386,39 +1386,159 @@ textarea.matrix-input {
     gap: 8px;
 }
 
-/* Footer Stats */
+/* Gelişmiş Stats Bölümü */
 .pip-footer {
-    background: var(--pip-bg);
-    border-top: 2px solid var(--pip-green);
     padding: 15px;
+    background: rgba(0, 20, 0, 0.8);
+    border-top: 2px solid var(--pip-green);
+    position: relative;
+    overflow: hidden;
+}
+
+.pip-footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--pip-green), transparent);
+    animation: scanline 2s linear infinite;
 }
 
 .stats {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 20px;
 }
 
 .stat {
-    flex: 1;
+    position: relative;
+    background: rgba(0, 20, 0, 0.5);
+    padding: 15px;
+    border: 1px solid var(--pip-green);
+    border-radius: 4px;
+    animation: glowPulse 3s infinite;
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
 }
 
 .stat-label {
-    display: block;
-    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--pip-green);
+    font-size: 1rem;
+    text-shadow: 0 0 5px var(--pip-green);
+}
+
+.stat-label i {
+    font-size: 1.2rem;
+    animation: rotatePulse 4s linear infinite;
+}
+
+.stat-value {
+    color: var(--pip-light);
     font-size: 0.9rem;
 }
 
 .stat-bar {
-    background: var(--pip-dark);
-    border: 1px solid var(--pip-green);
-    height: 10px;
-        width: 100%;
+    height: 8px;
+    background: rgba(51, 255, 0, 0.1);
+    border: 1px solid rgba(51, 255, 0, 0.3);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
 }
 
 .stat-fill {
-    background: var(--pip-green);
     height: 100%;
-    transition: width 0.3s ease;
+    background: linear-gradient(90deg, 
+        var(--pip-green) 0%,
+        var(--pip-light) 50%,
+        var(--pip-green) 100%
+    );
+    transition: width 0.5s ease;
+    position: relative;
+}
+
+.stat-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(51, 255, 0, 0.4) 50%,
+        transparent 100%
+    );
+    animation: shimmer 2s infinite;
+}
+
+.stat-details {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: rgba(51, 255, 0, 0.7);
+}
+
+/* Animasyonlar */
+@keyframes rotatePulse {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Durum göstergeleri */
+.status-indicators {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(51, 255, 0, 0.2);
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    color: var(--pip-green);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--pip-green);
+    animation: pulse 2s infinite;
+}
+
+.status-dot.warning {
+    background: #ffaa00;
+}
+
+.status-dot.critical {
+    background: #ff3333;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 /* Modal */
@@ -2092,5 +2212,149 @@ textarea.matrix-input {
     0% { transform: scale(1); }
     50% { transform: scale(1.2); }
     100% { transform: scale(1); }
+}
+
+/* Not Kartları Stilleri */
+.stored-item {
+    background: rgba(0, 20, 0, 0.7);
+    border: 2px solid var(--pip-green);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    animation: fadeIn 0.5s ease-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.stored-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--pip-green), transparent);
+    animation: scanline 2s linear infinite;
+}
+
+.item-header {
+    padding: 15px;
+    border-bottom: 1px solid rgba(51, 255, 0, 0.2);
+}
+
+.item-title {
+    font-size: 1.2rem;
+    color: var(--pip-green);
+    text-shadow: 0 0 5px var(--pip-green);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.item-title i {
+    font-size: 1.4rem;
+    animation: glowPulse 2s infinite;
+}
+
+.item-content {
+    padding: 15px;
+    background: rgba(51, 255, 0, 0.05);
+}
+
+.item-preview {
+    color: var(--pip-light);
+    margin-bottom: 15px;
+    line-height: 1.5;
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+.item-date {
+    font-size: 0.9rem;
+    color: rgba(51, 255, 0, 0.7);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.item-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 10px 15px;
+    background: rgba(0, 20, 0, 0.8);
+    border-top: 1px solid rgba(51, 255, 0, 0.2);
+}
+
+.note-btn {
+    background: transparent;
+    border: 2px solid var(--pip-green);
+    color: var(--pip-green);
+    padding: 8px 15px;
+    font-family: 'Share Tech Mono', monospace;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 4px;
+}
+
+.note-btn i {
+    font-size: 1.1rem;
+}
+
+.note-btn.edit:hover {
+    background: rgba(51, 255, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(51, 255, 0, 0.3);
+}
+
+.note-btn.delete {
+    border-color: #ff3333;
+    color: #ff3333;
+}
+
+.note-btn.delete:hover {
+    background: rgba(255, 51, 51, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(255, 51, 51, 0.3);
+}
+
+/* Hover Efektleri */
+.stored-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 20px rgba(51, 255, 0, 0.2);
+}
+
+/* Animasyonlar */
+@keyframes scanline {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Scrollbar Stilleri */
+.item-preview::-webkit-scrollbar {
+    width: 6px;
+}
+
+.item-preview::-webkit-scrollbar-track {
+    background: rgba(51, 255, 0, 0.1);
+}
+
+.item-preview::-webkit-scrollbar-thumb {
+    background: var(--pip-green);
+    border-radius: 3px;
 }
 

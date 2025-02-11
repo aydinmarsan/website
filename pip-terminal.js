@@ -133,14 +133,6 @@ class PipTerminal {
                                 <i class="fas fa-sticky-note"></i>
                                 ${data.title}
                             </div>
-                            <div class="item-actions">
-                                <button class="note-btn edit" title="Edit">
-                                    <i class="fas fa-edit"></i> Edit
-                                </button>
-                                <button class="note-btn delete" title="Delete">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </div>
                         </div>
                         <div class="item-content">
                             <div class="item-preview">${data.content}</div>
@@ -148,6 +140,14 @@ class PipTerminal {
                                 <i class="fas fa-clock"></i>
                                 ${new Date(data.timestamp?.toDate()).toLocaleString()}
                             </div>
+                        </div>
+                        <div class="item-actions">
+                            <button class="note-btn edit" title="Edit">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="note-btn delete" title="Delete">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
                         </div>
                     `;
 
