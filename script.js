@@ -1052,19 +1052,19 @@ function switchView(viewName) {
 async function handleNoteAdd(event) {
     event.preventDefault();
     
-    const noteTitle = document.getElementById('noteTitle').value;
-    const noteContent = document.getElementById('noteContent').value;
+    const title = document.getElementById('noteTitle').value;
+    const content = document.getElementById('noteContent').value;
 
     try {
         await db.collection('notes').add({
-            title: noteTitle,
-            content: noteContent,
+            title: title,
+            content: content,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        showNotification('Not başarıyla eklendi');
         hideModal('noteModal');
         loadNotes();
+        showNotification('Not başarıyla eklendi');
     } catch (error) {
         showNotification('Hata: ' + error.message, 'error');
     }
@@ -1073,28 +1073,26 @@ async function handleNoteAdd(event) {
 // Notları yükle
 async function loadNotes() {
     const notesGrid = document.getElementById('notesGrid');
-    notesGrid.innerHTML = '<div class="loading">Notlar yükleniyor...</div>';
+    notesGrid.innerHTML = '<div class="loading">Yükleniyor...</div>';
 
     try {
         const snapshot = await db.collection('notes')
             .orderBy('createdAt', 'desc')
             .get();
 
+        notesGrid.innerHTML = '';
+        
         if (snapshot.empty) {
-            notesGrid.innerHTML = '<div class="no-items">Not bulunamadı</div>';
+            notesGrid.innerHTML = '<div class="empty">Henüz not eklenmemiş</div>';
             return;
         }
 
-        notesGrid.innerHTML = '';
         snapshot.forEach(doc => {
             const note = doc.data();
-            const noteCard = createNoteCard(doc.id, note);
-            notesGrid.appendChild(noteCard);
+            notesGrid.appendChild(createNoteCard(doc.id, note));
         });
-
-        updateCounts();
     } catch (error) {
-        notesGrid.innerHTML = '<div class="error">Notlar yüklenirken hata oluştu</div>';
+        notesGrid.innerHTML = '<div class="error">Hata oluştu</div>';
         console.error('Not yükleme hatası:', error);
     }
 }
@@ -1102,23 +1100,13 @@ async function loadNotes() {
 // Not kartı oluştur
 function createNoteCard(id, note) {
     const div = document.createElement('div');
-    div.className = 'file-card';
+    div.className = 'note-card';
     div.innerHTML = `
-        <div class="file-icon">
-            <i class="fas fa-sticky-note"></i>
-        </div>
-        <div class="file-info">
-            <h3>${note.title}</h3>
-            <p>${note.content}</p>
-            <span class="file-meta">
-                ${formatDate(note.createdAt)}
-            </span>
-        </div>
-        <div class="file-actions">
-            <button onclick="editNote('${id}')" class="action-btn">
-                <i class="fas fa-edit"></i>
-            </button>
-            <button onclick="deleteNote('${id}')" class="action-btn delete">
+        <h3 class="note-title">${note.title}</h3>
+        <p class="note-content">${note.content}</p>
+        <div class="note-footer">
+            <span class="note-date">${formatDate(note.createdAt)}</span>
+            <button onclick="deleteNote('${id}')" class="delete-btn">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
@@ -1126,16 +1114,16 @@ function createNoteCard(id, note) {
     return div;
 }
 
-// Not silme
+// Not sil
 async function deleteNote(id) {
     if (!confirm('Bu notu silmek istediğinizden emin misiniz?')) return;
 
     try {
         await db.collection('notes').doc(id).delete();
-        showNotification('Not başarıyla silindi');
         loadNotes();
+        showNotification('Not başarıyla silindi');
     } catch (error) {
-        showNotification('Not silinirken hata oluştu: ' + error.message, 'error');
+        showNotification('Hata: ' + error.message, 'error');
     }
 }
 
@@ -1224,4 +1212,115 @@ function initMatrixRain() {
 }
 
 // Sayfa yüklendiğinde Matrix efektini başlat
-document.addEventListener('DOMContentLoaded', initMatrixRain); 
+document.addEventListener('DOMContentLoaded', initMatrixRain);
+
+// Modal işlemleri
+function showNoteModal() {
+    document.getElementById('noteModal').style.display = 'flex';
+}
+
+function hideModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+    document.getElementById('noteForm').reset();
+}
+
+// Not ekleme
+async function handleNoteAdd(event) {
+    event.preventDefault();
+    
+    const title = document.getElementById('noteTitle').value;
+    const content = document.getElementById('noteContent').value;
+
+    try {
+        await db.collection('notes').add({
+            title: title,
+            content: content,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        hideModal('noteModal');
+        loadNotes();
+        showNotification('Not başarıyla eklendi');
+    } catch (error) {
+        showNotification('Hata: ' + error.message, 'error');
+    }
+}
+
+// Notları yükle
+async function loadNotes() {
+    const notesGrid = document.getElementById('notesGrid');
+    notesGrid.innerHTML = '<div class="loading">Yükleniyor...</div>';
+
+    try {
+        const snapshot = await db.collection('notes')
+            .orderBy('createdAt', 'desc')
+            .get();
+
+        notesGrid.innerHTML = '';
+        
+        if (snapshot.empty) {
+            notesGrid.innerHTML = '<div class="empty">Henüz not eklenmemiş</div>';
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const note = doc.data();
+            notesGrid.appendChild(createNoteCard(doc.id, note));
+        });
+    } catch (error) {
+        notesGrid.innerHTML = '<div class="error">Hata oluştu</div>';
+        console.error('Not yükleme hatası:', error);
+    }
+}
+
+// Not kartı oluştur
+function createNoteCard(id, note) {
+    const div = document.createElement('div');
+    div.className = 'note-card';
+    div.innerHTML = `
+        <h3 class="note-title">${note.title}</h3>
+        <p class="note-content">${note.content}</p>
+        <div class="note-footer">
+            <span class="note-date">${formatDate(note.createdAt)}</span>
+            <button onclick="deleteNote('${id}')" class="delete-btn">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    return div;
+}
+
+// Not sil
+async function deleteNote(id) {
+    if (!confirm('Bu notu silmek istediğinizden emin misiniz?')) return;
+
+    try {
+        await db.collection('notes').doc(id).delete();
+        loadNotes();
+        showNotification('Not başarıyla silindi');
+    } catch (error) {
+        showNotification('Hata: ' + error.message, 'error');
+    }
+}
+
+// Yardımcı fonksiyonlar
+function formatDate(timestamp) {
+    if (!timestamp) return '';
+    const date = timestamp.toDate();
+    return date.toLocaleDateString('tr-TR', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => notification.remove(), 3000);
+} 
