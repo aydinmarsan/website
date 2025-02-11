@@ -4230,8 +4230,45 @@ textarea.matrix-input {
 @media (max-width: 768px) {
     /* Ana Layout */
     .pip-container {
-        height: 100vh;
-        border-radius: 0;
+        height: 100%;
+        min-height: 100vh;
+    }
+
+    .pip-content {
+        height: auto;
+        overflow: visible;
+    }
+
+    .pip-main {
+        height: auto;
+        overflow: visible;
+        padding-bottom: 60px;
+    }
+
+    /* Not listesi için düzeltmeler */
+    #notes-content {
+        height: auto;
+        overflow: visible;
+    }
+
+    .notes-list {
+        height: auto;
+        overflow: visible;
+    }
+
+    /* Stored item için düzeltmeler */
+    .stored-item {
+        height: auto;
+    }
+
+    .item-content {
+        max-height: none;
+    }
+
+    /* Preview panel düzeltmesi */
+    .preview-panel {
+        position: fixed;
+        height: 100%;
     }
 
     /* Header */
