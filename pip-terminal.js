@@ -9,7 +9,6 @@ class PipTerminal {
         this.updateClock();
         this.checkAuth();
         this.initializeNoteEditor();
-        this.initializeSystemMonitor();
     }
 
     checkAuth() {
@@ -1582,103 +1581,6 @@ class PipTerminal {
         text = text.replace(/\n/g, '<br>');
 
         return text;
-    }
-
-    // Sistem monitörü fonksiyonları
-    initializeSystemMonitor() {
-        // İlk değerleri ayarla
-        this.updateSystemStats();
-        
-        // Her 2 saniyede bir güncelle
-        setInterval(() => this.updateSystemStats(), 2000);
-        
-        // Ağ durumunu kontrol et
-        window.addEventListener('online', () => this.updateNetworkStatus(true));
-        window.addEventListener('offline', () => this.updateNetworkStatus(false));
-    }
-
-    updateSystemStats() {
-        // CPU Kullanımı (simüle edilmiş)
-        const cpuUsage = Math.floor(Math.random() * 100);
-        document.getElementById('cpuUsage').textContent = `${cpuUsage}%`;
-        document.getElementById('cpuBar').style.width = `${cpuUsage}%`;
-        
-        // CPU Sıcaklığı (simüle edilmiş)
-        const cpuTemp = 40 + Math.floor(Math.random() * 20);
-        document.getElementById('cpuTemp').textContent = `Temp: ${cpuTemp}°C`;
-        
-        // Bellek Kullanımı (gerçek)
-        if (performance.memory) {
-            const totalMemory = Math.round(performance.memory.jsHeapSizeLimit / (1024 * 1024));
-            const usedMemory = Math.round(performance.memory.usedJSHeapSize / (1024 * 1024));
-            const memoryPercentage = Math.round((usedMemory / totalMemory) * 100);
-            
-            document.getElementById('memoryUsage').textContent = `${usedMemory}/${totalMemory} MB`;
-            document.getElementById('memoryBar').style.width = `${memoryPercentage}%`;
-            document.getElementById('memoryAvailable').textContent = 
-                `Available: ${totalMemory - usedMemory} MB`;
-        }
-        
-        // Ağ Hızı (simüle edilmiş)
-        const downloadSpeed = (Math.random() * 10).toFixed(1);
-        const uploadSpeed = (Math.random() * 5).toFixed(1);
-        document.getElementById('downloadSpeed').textContent = downloadSpeed;
-        document.getElementById('uploadSpeed').textContent = uploadSpeed;
-        
-        // Sistem Sıcaklığı (simüle edilmiş)
-        const systemTemp = 35 + Math.floor(Math.random() * 15);
-        document.getElementById('systemTemp').textContent = `${systemTemp}°C`;
-        
-        // Sistem Çalışma Süresi
-        this.updateUptime();
-        
-        // Sistem Sağlığı
-        this.updateSystemHealth(cpuTemp, systemTemp, memoryPercentage);
-    }
-
-    updateNetworkStatus(isOnline) {
-        const statusElement = document.getElementById('networkStatus');
-        const statusDot = document.querySelector('.network-item .status-dot');
-        
-        if (isOnline) {
-            statusElement.textContent = 'ONLINE';
-            statusElement.style.color = 'var(--pip-neon)';
-            statusDot?.classList.remove('critical');
-        } else {
-            statusElement.textContent = 'OFFLINE';
-            statusElement.style.color = 'var(--pip-magenta)';
-            statusDot?.classList.add('critical');
-        }
-    }
-
-    updateUptime() {
-        const now = new Date();
-        const start = new Date(localStorage.getItem('systemStartTime') || now);
-        const diff = now - start;
-        
-        const hours = Math.floor(diff / 3600000);
-        const minutes = Math.floor((diff % 3600000) / 60000);
-        const seconds = Math.floor((diff % 60000) / 1000);
-        
-        document.getElementById('systemUptime').textContent = 
-            `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-
-    updateSystemHealth(cpuTemp, systemTemp, memoryUsage) {
-        let status = 'OPTIMAL';
-        let color = 'var(--pip-neon)';
-        
-        if (cpuTemp > 75 || systemTemp > 45 || memoryUsage > 90) {
-            status = 'CRITICAL';
-            color = 'var(--pip-magenta)';
-        } else if (cpuTemp > 65 || systemTemp > 40 || memoryUsage > 80) {
-            status = 'WARNING';
-            color = 'var(--pip-yellow)';
-        }
-        
-        const healthElement = document.getElementById('systemHealth');
-        healthElement.textContent = status;
-        healthElement.style.color = color;
     }
 }
 

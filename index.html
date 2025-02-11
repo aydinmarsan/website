@@ -3,30 +3,253 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matrix Login</title>
+    <title>Matrix Terminal</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .boot-sequence {
+        .boot-screen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: black;
-            color: var(--terminal-green);
-            padding: 20px;
+            background: #000;
+            color: var(--pip-neon);
             font-family: 'Share Tech Mono', monospace;
+            padding: 20px;
             z-index: 1000;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
+        }
+
+        .boot-header {
+            text-align: center;
+            margin-bottom: 30px;
+            opacity: 0;
+            animation: fadeIn 1s forwards;
+        }
+
+        .boot-logo {
+            color: var(--pip-neon);
+            text-shadow: 0 0 10px var(--pip-neon);
+            margin-bottom: 10px;
+            font-size: 0.8rem;
             white-space: pre;
+        }
+
+        .boot-content {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.4;
+            padding: 20px;
+            background: rgba(0, 20, 0, 0.3);
+            border: 1px solid var(--pip-neon);
+            box-shadow: inset 0 0 20px rgba(57, 255, 20, 0.2);
+            position: relative;
+        }
+
+        .boot-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(57, 255, 20, 0.05) 3px,
+                transparent 4px
+            );
+            pointer-events: none;
+        }
+
+        .boot-line {
+            margin: 4px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: lineAppear 0.3s forwards;
+        }
+
+        .boot-line.error {
+            color: var(--pip-magenta);
+        }
+
+        .boot-line.warning {
+            color: var(--pip-yellow);
+        }
+
+        .boot-line.success {
+            color: var(--pip-cyan);
+        }
+
+        .boot-timestamp {
+            min-width: 100px;
+            color: var(--pip-cyan);
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        .boot-progress {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 20, 0, 0.5);
+            border: 1px solid var(--pip-neon);
+            border-radius: 4px;
+        }
+
+        .progress-bar {
+            height: 2px;
+            background: rgba(57, 255, 20, 0.2);
+            margin: 10px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--pip-neon);
+            box-shadow: 0 0 10px var(--pip-neon);
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 10px;
+            height: 100%;
+            background: var(--pip-neon);
+            box-shadow: 0 0 10px var(--pip-neon);
+        }
+
+        .boot-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .status-text {
+            color: var(--pip-neon);
+        }
+
+        .status-details {
+            display: flex;
+            gap: 20px;
+            font-size: 0.8rem;
+            color: var(--pip-cyan);
+        }
+
+        .system-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .info-item {
+            padding: 10px;
+            background: rgba(0, 20, 0, 0.4);
+            border: 1px solid var(--pip-neon);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info-label {
+            color: var(--pip-cyan);
+            font-size: 0.8rem;
+        }
+
+        .info-value {
+            color: var(--pip-neon);
+            font-size: 0.9rem;
+            text-shadow: 0 0 5px var(--pip-neon);
+        }
+
+        @keyframes lineAppear {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(2px, -2px); }
+            60% { transform: translate(-2px, -2px); }
+            80% { transform: translate(2px, 2px); }
+            100% { transform: translate(0); }
         }
     </style>
 </head>
 <body>
-    <!-- Boot sequence overlay -->
-    <div class="boot-sequence" id="bootSequence"></div>
+    <!-- Boot Screen -->
+    <div class="boot-screen" id="bootScreen">
+        <div class="boot-header">
+            <pre class="boot-logo">
+ ██████╗ ██╗   ██╗ █████╗ ███╗   ██╗████████╗██╗   ██╗███╗   ███╗
+██╔═══██╗██║   ██║██╔══██╗████╗  ██║╚══██╔══╝██║   ██║████╗ ████║
+██║   ██║██║   ██║███████║██╔██╗ ██║   ██║   ██║   ██║██╔████╔██║
+██║▄▄ ██║██║   ██║██╔══██║██║╚██╗██║   ██║   ██║   ██║██║╚██╔╝██║
+╚██████╔╝╚██████╔╝██║  ██║██║ ╚████║   ██║   ╚██████╔╝██║ ╚═╝ ██║
+ ╚══▀▀═╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝</pre>
+            <div class="boot-version">QUANTUM OS v3.0.1</div>
+        </div>
+        
+        <div class="boot-content" id="bootContent"></div>
+        
+        <div class="boot-progress">
+            <div class="progress-bar">
+                <div class="boot-progress-bar" id="bootProgress"></div>
+            </div>
+            <div class="boot-status">
+                <div class="status-text" id="bootStatus">Initializing system...</div>
+                <div class="status-details">
+                    <span id="bootMemory">RAM: 0 MB</span>
+                    <span id="bootCPU">CPU: 0%</span>
+                    <span id="bootTime">Time: 00:00:00</span>
+                </div>
+            </div>
+            <div class="system-info">
+                <div class="info-item">
+                    <span class="info-label">KERNEL</span>
+                    <span class="info-value">QOS 3.0.1</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">ARCHITECTURE</span>
+                    <span class="info-value">QUANTUM-X64</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">SECURITY</span>
+                    <span class="info-value">LEVEL ALPHA</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">ENCRYPTION</span>
+                    <span class="info-value">QUANTUM-256</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Matrix Arka Plan -->
     <canvas id="matrix"></canvas>
@@ -79,62 +302,81 @@
 
     <script src="matrix.js"></script>
     <script>
-        // Boot sequence
-        const bootTexts = [
-            { text: 'INITIALIZING SYSTEM...', delay: 1000 },
-            { text: 'CHECKING HARDWARE COMPONENTS...', delay: 800 },
-            { text: '[OK] CPU: Intel Matrix-X9 Quantum', delay: 300 },
-            { text: '[OK] MEMORY: 128TB Quantum RAM', delay: 300 },
-            { text: '[OK] STORAGE: 1PB Neural Storage', delay: 300 },
-            { text: 'LOADING KERNEL v4.0.1...', delay: 1000 },
-            { text: 'ESTABLISHING QUANTUM ENCRYPTION...', delay: 800 },
-            { text: 'CHECKING SECURITY PROTOCOLS...', delay: 800 },
-            { text: '[WARNING] UNAUTHORIZED ACCESS DETECTED', delay: 500 },
-            { text: 'ACTIVATING DEFENSE SYSTEMS...', delay: 800 },
-            { text: 'INITIALIZING MATRIX INTERFACE...', delay: 1000 },
-            { text: 'SYSTEM READY.', delay: 500 }
+        // Boot sequence'ı güncelle
+        const bootSequence = [
+            { text: '[INIT] Starting Quantum OS...', delay: 1000, progress: 5, type: 'info' },
+            { text: '[BIOS] Checking quantum circuits...', delay: 800, progress: 10, type: 'info' },
+            { text: '[MEM] Initializing quantum memory banks...', delay: 600, progress: 15, type: 'info' },
+            { text: '[CPU] Quantum processor online...', delay: 400, progress: 20, type: 'success' },
+            { text: '[SYS] Loading kernel modules...', delay: 1000, progress: 30, type: 'info' },
+            { text: '[WARN] Anomaly detected in sector 7G...', delay: 500, progress: 35, type: 'warning' },
+            { text: '[SEC] Activating quantum encryption...', delay: 800, progress: 45, type: 'info' },
+            { text: '[NET] Establishing quantum tunnels...', delay: 700, progress: 55, type: 'info' },
+            { text: '[ERR] Unauthorized access attempt blocked...', delay: 300, progress: 60, type: 'error' },
+            { text: '[SEC] Neural firewall activated...', delay: 800, progress: 70, type: 'success' },
+            { text: '[SYS] Calibrating quantum stabilizers...', delay: 600, progress: 80, type: 'info' },
+            { text: '[OK] System integrity verified...', delay: 500, progress: 90, type: 'success' },
+            { text: '[SYS] Quantum OS ready.', delay: 1000, progress: 100, type: 'success' }
         ];
 
-        async function bootAnimation() {
-            const boot = document.getElementById('bootSequence');
-            let fullText = '';
+        async function startBootSequence() {
+            const content = document.getElementById('bootContent');
+            const progress = document.getElementById('bootProgress');
+            const status = document.getElementById('bootStatus');
+            const bootScreen = document.getElementById('bootScreen');
+            const startTime = Date.now();
 
-            // Matrix yağmuru başlat ama yarı saydam
-            const matrix = new MatrixEffect();
-            matrix.start();
-            document.getElementById('matrix').style.opacity = '0.1';
+            // Simüle edilmiş sistem bilgileri
+            setInterval(() => {
+                const memory = Math.floor(Math.random() * 1024) + 3072;
+                const cpu = Math.floor(Math.random() * 30) + 70;
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const time = new Date(elapsed * 1000).toISOString().substr(11, 8);
 
-            for (let item of bootTexts) {
-                fullText += '> ' + item.text + '\n';
-                boot.textContent = fullText;
-                await new Promise(r => setTimeout(r, item.delay));
+                document.getElementById('bootMemory').textContent = `RAM: ${memory} MB`;
+                document.getElementById('bootCPU').textContent = `CPU: ${cpu}%`;
+                document.getElementById('bootTime').textContent = `Time: ${time}`;
+            }, 1000);
+
+            for (const item of bootSequence) {
+                const timestamp = new Date().toLocaleTimeString();
+                const line = document.createElement('div');
+                line.className = `boot-line ${item.type || ''}`;
+                line.style.animationDelay = `${item.delay * 0.001}s`;
                 
-                // Bazı özel efektler
-                if (item.text.includes('[WARNING]')) {
-                    boot.style.color = '#ff0000';
+                line.innerHTML = `
+                    <span class="boot-timestamp">[${timestamp}]</span>
+                    <span class="boot-message">${item.text}</span>
+                `;
+                
+                content.appendChild(line);
+                content.scrollTop = content.scrollHeight;
+                progress.style.width = `${item.progress}%`;
+                status.textContent = item.text;
+
+                if (item.type === 'error') {
+                    status.style.color = '#ff3366';
                     await new Promise(r => setTimeout(r, 200));
-                    boot.style.color = '#00ff00';
+                    status.style.color = '';
+                } else if (item.type === 'warning') {
+                    status.style.color = '#ffaa00';
+                    await new Promise(r => setTimeout(r, 200));
+                    status.style.color = '';
+                } else if (item.type === 'success') {
+                    status.style.color = '#00ff88';
                 }
-                
-                if (item.text.includes('[OK]')) {
-                    boot.style.color = '#00ff88';
-                    await new Promise(r => setTimeout(r, 100));
-                    boot.style.color = '#00ff00';
-                }
-            }
 
-            // Matrix yağmurunu tam görünür yap
-            const canvas = document.getElementById('matrix');
-            canvas.style.transition = 'opacity 2s';
-            canvas.style.opacity = '1';
+                await new Promise(r => setTimeout(r, item.delay));
+            }
 
             // Boot ekranını kaldır
             await new Promise(r => setTimeout(r, 1000));
-            boot.style.animation = 'fadeOut 1.5s forwards';
+            bootScreen.style.opacity = '0';
+            bootScreen.style.transition = 'opacity 1.5s';
             
             setTimeout(() => {
-                boot.style.display = 'none';
-                document.getElementById('accessCode').focus();
+                bootScreen.style.display = 'none';
+                showTerminalMessages();
             }, 1500);
         }
 
@@ -175,7 +417,7 @@
         });
 
         // Sayfa yüklendiğinde boot animasyonunu başlat
-        document.addEventListener('DOMContentLoaded', bootAnimation);
+        document.addEventListener('DOMContentLoaded', startBootSequence);
 
         // Otomatik fokus
         document.getElementById('accessCode').focus();

@@ -16,6 +16,10 @@
     --pip-yellow: #ffff00;
     --pip-grid: rgba(51, 255, 51, 0.1);
     --pip-glow: 0 0 10px var(--pip-neon), 0 0 20px var(--pip-neon), 0 0 30px var(--pip-neon);
+    --matrix-green: #00ff00;
+    --matrix-glow: 0 0 20px rgba(57, 255, 20, 0.5);
+    --scan-line: rgba(57, 255, 20, 0.1);
+    --glitch-shadow: 2px 2px #39ff14;
 }
 
 * {
@@ -4508,6 +4512,736 @@ textarea.matrix-input {
         width: 100%;
         text-align: center;
         margin-bottom: 4px;
+    }
+}
+
+/* Tarama Çizgisi Efekti */
+.pip-container::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        0deg,
+        var(--pip-dark),
+        var(--pip-dark) 2px,
+        var(--scan-line) 3px,
+        var(--pip-dark) 4px
+    );
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0.15;
+    animation: scanEffect 8s linear infinite;
+}
+
+/* Matrix Yağmuru Efekti */
+.matrix-rain {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    opacity: 0.1;
+}
+
+/* Glitch Efekti */
+.pip-title {
+    position: relative;
+    animation: glitchText 3s infinite;
+}
+
+.pip-title::before,
+.pip-title::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.pip-title::before {
+    left: 2px;
+    text-shadow: -2px 0 var(--pip-neon);
+    animation: glitchText 4s infinite;
+    clip: rect(44px, 450px, 56px, 0);
+}
+
+.pip-title::after {
+    left: -2px;
+    text-shadow: -2px 0 var(--matrix-green);
+    animation: glitchText 5s infinite;
+    clip: rect(24px, 450px, 36px, 0);
+}
+
+/* Buton Hover Efekti */
+.pip-btn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.pip-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        120deg,
+        transparent,
+        rgba(57, 255, 20, 0.2),
+        transparent
+    );
+    transition: 0.5s;
+}
+
+.pip-btn:hover::before {
+    left: 100%;
+}
+
+.pip-btn:hover {
+    text-shadow: 0 0 10px var(--pip-neon);
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.5);
+    transform: translateY(-2px);
+}
+
+/* Kart Hover Efekti */
+.stored-item {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stored-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 200%;
+    height: 2px;
+    background: var(--pip-neon);
+    animation: scanline 2s linear infinite;
+}
+
+.stored-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(57, 255, 20, 0.3);
+}
+
+/* Terminal Efekti */
+#terminal-content {
+    position: relative;
+    overflow: hidden;
+}
+
+.terminal-input-line {
+    animation: cursorBlink 1s infinite;
+}
+
+/* Animasyonlar */
+@keyframes scanEffect {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(100vh); }
+}
+
+@keyframes glitchText {
+    0% { transform: translate(0); }
+    20% { transform: translate(-2px, 2px); }
+    40% { transform: translate(-2px, -2px); }
+    60% { transform: translate(2px, 2px); }
+    80% { transform: translate(2px, -2px); }
+    100% { transform: translate(0); }
+}
+
+@keyframes scanline {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes cursorBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+@keyframes modalSlide {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Modal Animasyonu */
+.pip-modal-content {
+    animation: modalSlide 0.3s ease-out;
+}
+
+/* Sidebar Tab Efekti */
+.pip-tab {
+    position: relative;
+    overflow: hidden;
+}
+
+.pip-tab::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--pip-neon);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.pip-tab:hover::after {
+    transform: scaleX(1);
+}
+
+/* Preview Panel Efekti */
+.preview-panel {
+    backdrop-filter: blur(10px);
+    border-left: 2px solid var(--pip-neon);
+    box-shadow: -10px 0 20px rgba(57, 255, 20, 0.2);
+}
+
+/* Scrollbar Stili */
+::-webkit-scrollbar {
+    width: 8px;
+    background: var(--pip-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--pip-neon);
+    border-radius: 4px;
+    box-shadow: 0 0 10px var(--pip-neon);
+}
+
+/* Loading Animasyonu */
+.loading {
+    position: relative;
+    color: var(--pip-neon);
+    text-shadow: 0 0 10px var(--pip-neon);
+    animation: loadingPulse 1.5s infinite;
+}
+
+@keyframes loadingPulse {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+}
+
+/* Gelişmiş Terminal Stilleri */
+#terminal-content {
+    background: rgba(0, 20, 0, 0.95);
+    border: 1px solid var(--pip-neon);
+    box-shadow: inset 0 0 20px rgba(57, 255, 20, 0.2);
+    padding: 15px;
+    font-family: 'Share Tech Mono', monospace;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Terminal Tarama Çizgisi */
+#terminal-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--pip-neon),
+        transparent
+    );
+    animation: terminalScan 3s linear infinite;
+    opacity: 0.5;
+}
+
+/* Terminal Başlık */
+.terminal-header {
+    color: var(--pip-neon);
+    padding: 5px 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--pip-neon);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.terminal-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    text-shadow: 0 0 5px var(--pip-neon);
+}
+
+.terminal-status {
+    font-size: 0.8rem;
+    color: var(--pip-cyan);
+}
+
+/* Terminal Çıktı Alanı */
+.terminal-output {
+    min-height: 300px;
+    margin-bottom: 10px;
+    padding: 10px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    overflow-y: auto;
+}
+
+/* Terminal Giriş Satırı */
+.terminal-input-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(0, 40, 0, 0.3);
+    border: 1px solid var(--pip-neon);
+    margin-top: 10px;
+}
+
+.prompt {
+    color: var(--pip-neon);
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.prompt::before {
+    content: '>';
+    color: var(--pip-cyan);
+}
+
+#terminalInput {
+    background: transparent;
+    border: none;
+    color: var(--pip-light);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem;
+    width: 100%;
+    padding: 0;
+}
+
+#terminalInput:focus {
+    outline: none;
+}
+
+/* Terminal Çıktı Stilleri */
+.output-line {
+    margin: 4px 0;
+    padding: 2px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.output-line.command {
+    color: var(--pip-cyan);
+}
+
+.output-line.error {
+    color: var(--pip-magenta);
+}
+
+.output-line.success {
+    color: var(--pip-neon);
+}
+
+.output-line.info {
+    color: var(--pip-yellow);
+}
+
+/* Zaman Damgası */
+.timestamp {
+    color: var(--pip-cyan);
+    font-size: 0.8rem;
+    opacity: 0.7;
+    min-width: 80px;
+}
+
+/* Terminal Animasyonları */
+@keyframes terminalScan {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+}
+
+@keyframes cursorBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* Özel Komut Çıktıları */
+.ascii-art {
+    color: var(--pip-neon);
+    font-family: monospace;
+    white-space: pre;
+    margin: 10px 0;
+}
+
+.system-info {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    margin: 10px 0;
+    padding: 10px;
+    background: rgba(0, 40, 0, 0.3);
+    border: 1px solid var(--pip-neon);
+}
+
+.info-label {
+    color: var(--pip-cyan);
+}
+
+.info-value {
+    color: var(--pip-light);
+}
+
+/* Komut Geçmişi */
+.history-entry {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(57, 255, 20, 0.1);
+}
+
+.history-number {
+    color: var(--pip-cyan);
+    font-size: 0.8rem;
+    min-width: 30px;
+}
+
+/* Otomatik Tamamlama */
+.autocomplete {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(0, 20, 0, 0.95);
+    border: 1px solid var(--pip-neon);
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.autocomplete-item {
+    padding: 5px 10px;
+    cursor: pointer;
+    color: var(--pip-light);
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.selected {
+    background: rgba(57, 255, 20, 0.2);
+    color: var(--pip-neon);
+}
+
+/* Progress Bar */
+.progress-bar {
+    height: 2px;
+    background: rgba(57, 255, 20, 0.2);
+    margin: 10px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--pip-neon);
+    width: 0%;
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 10px;
+    height: 100%;
+    background: var(--pip-neon);
+    box-shadow: 0 0 10px var(--pip-neon);
+}
+
+/* Retro-Futuristik Edit Panel Stilleri */
+.note-form {
+    position: relative;
+    background: linear-gradient(135deg, 
+        rgba(0, 20, 0, 0.95),
+        rgba(0, 40, 0, 0.9)
+    );
+    padding: 20px;
+    border: 1px solid var(--pip-neon);
+    border-radius: 4px;
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
+}
+
+/* Tarama Çizgisi Efekti */
+.note-form::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(57, 255, 20, 0.05) 3px,
+        transparent 4px
+    );
+    pointer-events: none;
+}
+
+/* Form Grupları */
+.form-group {
+    position: relative;
+    margin-bottom: 25px;
+    animation: fadeInUp 0.5s ease-out forwards;
+    opacity: 0;
+}
+
+.form-group:nth-child(1) { animation-delay: 0.1s; }
+.form-group:nth-child(2) { animation-delay: 0.2s; }
+.form-group:nth-child(3) { animation-delay: 0.3s; }
+.form-group:nth-child(4) { animation-delay: 0.4s; }
+
+/* Etiketler */
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--pip-neon);
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 0 5px var(--pip-neon);
+}
+
+.form-group label i {
+    font-size: 1.1rem;
+    animation: iconPulse 2s infinite;
+}
+
+/* Input Alanları */
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0, 20, 0, 0.7);
+    border: 1px solid var(--pip-neon);
+    color: var(--pip-light);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--pip-cyan);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+    background: rgba(0, 40, 0, 0.7);
+}
+
+/* Özel Select Stili */
+.form-group select {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--pip-neon) 50%),
+                      linear-gradient(135deg, var(--pip-neon) 50%, transparent 50%);
+    background-position: calc(100% - 20px) calc(1em + 2px),
+                         calc(100% - 15px) calc(1em + 2px);
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+}
+
+/* Öncelik Butonları */
+.priority-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.priority-btn {
+    flex: 1;
+    padding: 10px;
+    background: rgba(57, 255, 20, 0.1);
+    border: 1px solid var(--pip-neon);
+    color: var(--pip-neon);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.priority-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        120deg,
+        transparent,
+        rgba(57, 255, 20, 0.2),
+        transparent
+    );
+    transition: 0.5s;
+}
+
+.priority-btn:hover::before {
+    left: 100%;
+}
+
+.priority-btn.active {
+    background: var(--pip-neon);
+    color: var(--pip-dark);
+    box-shadow: 0 0 15px var(--pip-neon);
+}
+
+/* Editor Araç Çubuğu */
+.editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 10px;
+    background: rgba(0, 20, 0, 0.8);
+    border: 1px solid var(--pip-neon);
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+}
+
+.tool-btn {
+    padding: 8px 12px;
+    background: transparent;
+    border: 1px solid var(--pip-neon);
+    color: var(--pip-neon);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.tool-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--pip-neon);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.tool-btn:hover::after {
+    transform: scaleX(1);
+}
+
+.tool-btn.active {
+    background: var(--pip-neon);
+    color: var(--pip-dark);
+    box-shadow: 0 0 10px var(--pip-neon);
+}
+
+/* Not Editörü */
+.note-editor {
+    min-height: 300px;
+    padding: 15px;
+    background: rgba(0, 20, 0, 0.7);
+    border: 1px solid var(--pip-neon);
+    color: var(--pip-light);
+    font-family: 'Share Tech Mono', monospace;
+    line-height: 1.6;
+    resize: vertical;
+    transition: all 0.3s ease;
+}
+
+.note-editor:focus {
+    outline: none;
+    border-color: var(--pip-cyan);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+/* Meta Bilgiler */
+.note-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 15px;
+    background: rgba(0, 20, 0, 0.6);
+    border: 1px solid var(--pip-neon);
+    border-radius: 4px;
+    margin: 20px 0;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--pip-cyan);
+    font-size: 0.85rem;
+}
+
+.meta-item i {
+    color: var(--pip-neon);
+    animation: metaPulse 2s infinite;
+}
+
+/* Animasyonlar */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes iconPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+@keyframes metaPulse {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+}
+
+/* Responsive Tasarım */
+@media (max-width: 768px) {
+    .priority-buttons {
+        flex-direction: column;
+    }
+    
+    .editor-toolbar {
+        justify-content: center;
+    }
+    
+    .note-meta {
+        flex-direction: column;
+        gap: 10px;
     }
 }
 
