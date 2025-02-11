@@ -11,26 +11,21 @@ const firebaseConfig = {
 // Firebase'i başlat
 firebase.initializeApp(firebaseConfig);
 
-// Storage ve Firestore referansları
-const storage = firebase.storage();
+// Firestore referansı
 const db = firebase.firestore();
-
-// Firebase servislerini başlat
-const auth = firebase.auth();
 
 // Firestore ayarları
 db.settings({
-    cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
+    cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
+    merge: true
 });
 
 // Offline kalıcılığı etkinleştir
 db.enablePersistence()
     .catch((err) => {
         if (err.code == 'failed-precondition') {
-            // Birden fazla sekme açık
             console.log('Persistence failed');
         } else if (err.code == 'unimplemented') {
-            // Tarayıcı desteklemiyor
             console.log('Persistence is not available');
         }
     }); 

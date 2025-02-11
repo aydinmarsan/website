@@ -74,22 +74,39 @@ async function saveNote() {
         return;
     }
 
-    const newNote = {
-        title: noteTitle,
-        text: noteText,
-        date: new Date().toLocaleString(),
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
     try {
-        await db.collection('notes').add(newNote);
-        
+        // Yükleniyor bildirimi
+        const saveButton = document.querySelector('.note-input button');
+        saveButton.disabled = true;
+        saveButton.textContent = 'SAVING...';
+
+        // Notu Firebase'e kaydet
+        const docRef = await db.collection('notes').add({
+            title: noteTitle,
+            text: noteText,
+            date: new Date().toLocaleString('tr-TR'),
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            createdAt: new Date().getTime()
+        });
+
+        console.log('Not başarıyla kaydedildi. ID:', docRef.id); // Debug için
+
         // Formu temizle
         document.getElementById('noteTitle').value = '';
         document.getElementById('noteText').value = '';
+        
+        // Butonu normale döndür
+        saveButton.disabled = false;
+        saveButton.textContent = 'SAVE NOTE';
+
     } catch (error) {
-        console.error("Error adding note: ", error);
-        alert('Error saving note. Please try again.');
+        console.error("Firebase error:", error); // Detaylı hata bilgisi
+        alert('Error saving note: ' + error.message);
+        
+        // Butonu normale döndür
+        const saveButton = document.querySelector('.note-input button');
+        saveButton.disabled = false;
+        saveButton.textContent = 'SAVE NOTE';
     }
 }
 
@@ -97,33 +114,43 @@ async function saveNote() {
 function loadNotes() {
     const notesList = document.getElementById('notesList');
     
-    // Gerçek zamanlı dinleme
-    db.collection('notes')
-        .orderBy('timestamp', 'desc')
-        .onSnapshot((snapshot) => {
-            notesList.innerHTML = '';
-            
-            snapshot.forEach(doc => {
-                const note = doc.data();
-                const noteElement = document.createElement('div');
-                noteElement.className = 'note-item';
-                noteElement.innerHTML = `
-                    <div class="note-content">
-                        <div class="note-title">${note.title}</div>
-                        <div class="note-text">${note.text}</div>
-                        <div class="note-date">${note.date}</div>
-                    </div>
-                    <div class="note-actions">
-                        <button onclick="editNote('${doc.id}')">EDIT</button>
-                        <button onclick="deleteNote('${doc.id}')">DELETE</button>
-                    </div>
-                `;
-                notesList.appendChild(noteElement);
+    try {
+        // Gerçek zamanlı dinleme
+        db.collection('notes')
+            .orderBy('timestamp', 'desc')
+            .onSnapshot((snapshot) => {
+                notesList.innerHTML = '';
+                
+                if (snapshot.empty) {
+                    notesList.innerHTML = '<div class="no-notes">NO NOTES FOUND</div>';
+                    return;
+                }
+                
+                snapshot.forEach(doc => {
+                    const note = doc.data();
+                    const noteElement = document.createElement('div');
+                    noteElement.className = 'note-item';
+                    noteElement.innerHTML = `
+                        <div class="note-content">
+                            <div class="note-title">${note.title || 'Untitled'}</div>
+                            <div class="note-text">${note.text || 'No content'}</div>
+                            <div class="note-date">${note.date || 'No date'}</div>
+                        </div>
+                        <div class="note-actions">
+                            <button onclick="editNote('${doc.id}')">EDIT</button>
+                            <button onclick="deleteNote('${doc.id}')">DELETE</button>
+                        </div>
+                    `;
+                    notesList.appendChild(noteElement);
+                });
+            }, (error) => {
+                console.error("Firebase error:", error);
+                notesList.innerHTML = `<div class="error-message">ERROR: ${error.message}</div>`;
             });
-        }, (error) => {
-            console.error("Error loading notes: ", error);
-            alert('Error loading notes. Please refresh the page.');
-        });
+    } catch (error) {
+        console.error("Firebase error:", error);
+        notesList.innerHTML = `<div class="error-message">ERROR: ${error.message}</div>`;
+    }
 }
 
 // Not düzenleme
