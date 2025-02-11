@@ -3,55 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
+    <title>PIP-OS v7.1.0.8</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    
     <!-- Firebase Config -->
     <script src="firebase-config.js"></script>
 </head>
-<body>
-    <canvas id="matrix"></canvas>
-    
-    <div class="admin-container">
-        <div class="admin-header">
-            <div class="title">ADMIN TERMINAL</div>
-            <button class="exit-btn" onclick="logout()">EXIT</button>
+<body class="pip-body">
+    <div class="scan-lines"></div>
+    <div class="pip-container">
+        <div class="pip-header">
+            <div class="header-left">
+                <span class="pip-title">PIP-OS v7.1.0.8</span>
+                <span class="pip-status">STATUS: All Systems Nominal</span>
+            </div>
+            <div class="header-right">
+                <span class="pip-time" id="pipTime">00:00:00</span>
+                <button onclick="logout()" class="pip-btn exit-btn">
+                    <i class="fas fa-power-off"></i>
+                </button>
+            </div>
         </div>
-        
-        <div class="note-section">
-            <div class="note-input">
-                <div class="input-fields">
-                    <input type="text" id="noteTitle" placeholder="Enter note title..." maxlength="50">
-                    <textarea id="noteText" placeholder="Enter your note..."></textarea>
+
+        <div class="pip-content">
+            <div class="pip-sidebar">
+                <button class="pip-tab active" data-tab="notes">
+                    <i class="fas fa-book"></i> NOTES
+                </button>
+                <button class="pip-tab" data-tab="files">
+                    <i class="fas fa-folder"></i> FILES
+                </button>
+                <button class="pip-tab" data-tab="terminal">
+                    <i class="fas fa-terminal"></i> TERMINAL
+                </button>
+            </div>
+
+            <div class="pip-main">
+                <!-- Notes Tab -->
+                <div class="pip-tab-content active" id="notes-content">
+                    <div class="notes-list" id="notesList"></div>
+                    <button class="pip-btn add-btn" id="addNoteBtn">
+                        <i class="fas fa-plus"></i> NEW NOTE
+                    </button>
                 </div>
-                <button onclick="saveNote()">SAVE NOTE</button>
+
+                <!-- Files Tab -->
+                <div class="pip-tab-content" id="files-content">
+                    <div class="files-list" id="filesList"></div>
+                    <div class="upload-area" id="uploadArea">
+                        <input type="file" id="fileInput" multiple>
+                        <div class="upload-text">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>DROP FILES HERE OR CLICK TO UPLOAD</span>
+                        </div>
+                        <div id="uploadProgress"></div>
+                    </div>
+                </div>
+
+                <!-- Terminal Tab -->
+                <div class="pip-tab-content" id="terminal-content">
+                    <div class="terminal-output" id="output"></div>
+                    <div class="terminal-input-line">
+                        <span class="prompt">>></span>
+                        <input type="text" id="terminalInput" autocomplete="off" spellcheck="false">
+                    </div>
+                </div>
             </div>
-            
-            <div class="notes-list" id="notesList">
-                <!-- Notlar buraya eklenecek -->
+        </div>
+
+        <div class="pip-footer">
+            <div class="stats">
+                <div class="stat">
+                    <span class="stat-label">STORAGE</span>
+                    <div class="stat-bar">
+                        <div class="stat-fill" id="storageBar"></div>
+                    </div>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">MEMORY</span>
+                    <div class="stat-bar">
+                        <div class="stat-fill" style="width: 65%"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Çıkış Modal -->
-    <div id="exitModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">SYSTEM ALERT</div>
-            <div class="modal-body">CONFIRM SYSTEM SHUTDOWN?</div>
+    <!-- Note Modal -->
+    <div class="pip-modal" id="noteModal">
+        <div class="pip-modal-content">
+            <input type="text" id="noteTitle" placeholder="Note Title" class="pip-input">
+            <textarea id="noteContent" placeholder="Note Content" class="pip-input"></textarea>
             <div class="modal-buttons">
-                <button onclick="confirmLogout()">CONFIRM</button>
-                <button onclick="closeModal()">CANCEL</button>
+                <button class="pip-btn save-btn" id="saveNoteBtn">SAVE</button>
+                <button class="pip-btn cancel-btn" id="cancelNoteBtn">CANCEL</button>
             </div>
         </div>
     </div>
 
-    <script src="admin.js"></script>
+    <script src="pip-terminal.js"></script>
 </body>
 </html> 

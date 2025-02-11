@@ -64,6 +64,38 @@ function initMatrix() {
     draw();
 }
 
+// Not panelini aç/kapat
+function toggleNotePanel() {
+    const notePanel = document.getElementById('notePanel');
+    const currentDisplay = window.getComputedStyle(notePanel).display;
+
+    if (currentDisplay === 'none') {
+        // Panel açılırken animasyon
+        notePanel.style.display = 'block';
+        notePanel.style.opacity = '0';
+        notePanel.style.transform = 'translate(-50%, -45%)';
+        
+        setTimeout(() => {
+            notePanel.style.opacity = '1';
+            notePanel.style.transform = 'translate(-50%, -50%)';
+        }, 10);
+
+        // Input'a fokuslan
+        document.getElementById('noteTitle').focus();
+    } else {
+        // Panel kapanırken animasyon
+        notePanel.style.opacity = '0';
+        notePanel.style.transform = 'translate(-50%, -45%)';
+        
+        setTimeout(() => {
+            notePanel.style.display = 'none';
+            // Formu temizle
+            document.getElementById('noteTitle').value = '';
+            document.getElementById('noteText').value = '';
+        }, 300);
+    }
+}
+
 // Not kaydetme
 async function saveNote() {
     const noteTitle = document.getElementById('noteTitle').value.trim();
@@ -75,13 +107,14 @@ async function saveNote() {
     }
 
     try {
-        // Yükleniyor bildirimi
-        const saveButton = document.querySelector('.note-input button');
-        saveButton.disabled = true;
-        saveButton.textContent = 'SAVING...';
+        const saveBtn = document.querySelector('.save-btn');
+        const originalText = saveBtn.innerHTML;
+        
+        // Kaydetme animasyonu
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SAVING...';
+        saveBtn.disabled = true;
 
-        // Notu Firebase'e kaydet
-        const docRef = await db.collection('notes').add({
+        await db.collection('notes').add({
             title: noteTitle,
             text: noteText,
             date: new Date().toLocaleString('tr-TR'),
@@ -89,24 +122,31 @@ async function saveNote() {
             createdAt: new Date().getTime()
         });
 
-        console.log('Not başarıyla kaydedildi. ID:', docRef.id); // Debug için
-
-        // Formu temizle
-        document.getElementById('noteTitle').value = '';
-        document.getElementById('noteText').value = '';
+        // Başarılı animasyonu
+        saveBtn.innerHTML = '<i class="fas fa-check"></i> SAVED!';
+        saveBtn.style.backgroundColor = 'var(--matrix-green)';
+        saveBtn.style.color = 'black';
         
-        // Butonu normale döndür
-        saveButton.disabled = false;
-        saveButton.textContent = 'SAVE NOTE';
+        setTimeout(() => {
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
+            saveBtn.style.backgroundColor = '';
+            saveBtn.style.color = '';
+            toggleNotePanel();
+        }, 1000);
 
     } catch (error) {
-        console.error("Firebase error:", error); // Detaylı hata bilgisi
+        console.error("Firebase error:", error);
         alert('Error saving note: ' + error.message);
         
-        // Butonu normale döndür
-        const saveButton = document.querySelector('.note-input button');
-        saveButton.disabled = false;
-        saveButton.textContent = 'SAVE NOTE';
+        const saveBtn = document.querySelector('.save-btn');
+        saveBtn.innerHTML = '<i class="fas fa-times"></i> ERROR';
+        saveBtn.style.backgroundColor = 'var(--matrix-red)';
+        setTimeout(() => {
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
+            saveBtn.style.backgroundColor = '';
+        }, 2000);
     }
 }
 
@@ -115,14 +155,21 @@ function loadNotes() {
     const notesList = document.getElementById('notesList');
     
     try {
-        // Gerçek zamanlı dinleme
         db.collection('notes')
             .orderBy('timestamp', 'desc')
             .onSnapshot((snapshot) => {
                 notesList.innerHTML = '';
                 
                 if (snapshot.empty) {
-                    notesList.innerHTML = '<div class="no-notes">NO NOTES FOUND</div>';
+                    notesList.innerHTML = `
+                        <div class="empty-notes">
+                            <i class="fas fa-clipboard fa-3x"></i>
+                            <p>NO NOTES FOUND</p>
+                            <button onclick="toggleNotePanel()" class="add-note-btn">
+                                <i class="fas fa-plus"></i> ADD FIRST NOTE
+                            </button>
+                        </div>
+                    `;
                     return;
                 }
                 
@@ -132,24 +179,42 @@ function loadNotes() {
                     noteElement.className = 'note-item';
                     noteElement.innerHTML = `
                         <div class="note-content">
-                            <div class="note-title">${note.title || 'Untitled'}</div>
-                            <div class="note-text">${note.text || 'No content'}</div>
-                            <div class="note-date">${note.date || 'No date'}</div>
+                            <div class="note-title">
+                                <i class="fas fa-file-alt"></i> ${note.title}
+                            </div>
+                            <div class="note-text">${note.text}</div>
+                            <div class="note-date">
+                                <i class="fas fa-clock"></i> ${note.date}
+                            </div>
                         </div>
                         <div class="note-actions">
-                            <button onclick="editNote('${doc.id}')">EDIT</button>
-                            <button onclick="deleteNote('${doc.id}')">DELETE</button>
+                            <button onclick="editNote('${doc.id}')" class="edit-btn">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteNote('${doc.id}')" class="delete-btn">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
                     `;
                     notesList.appendChild(noteElement);
                 });
             }, (error) => {
                 console.error("Firebase error:", error);
-                notesList.innerHTML = `<div class="error-message">ERROR: ${error.message}</div>`;
+                notesList.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        ERROR: ${error.message}
+                    </div>
+                `;
             });
     } catch (error) {
         console.error("Firebase error:", error);
-        notesList.innerHTML = `<div class="error-message">ERROR: ${error.message}</div>`;
+        notesList.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                ERROR: ${error.message}
+            </div>
+        `;
     }
 }
 
@@ -229,4 +294,5 @@ function confirmLogout() {
         localStorage.removeItem('isLoggedIn');
         window.location.href = 'index.html';
     }, 1000);
+} 
 } 

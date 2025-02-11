@@ -1,9 +1,15 @@
 :root {
-    --matrix-green: #00ff00;
-    --matrix-dark: #001100;
-    --matrix-black: #000000;
-    --matrix-bright: #ffffff;
-    --matrix-glow: 0 0 10px var(--matrix-green);
+    --terminal-green: #00ff00;
+    --terminal-dark: #001100;
+    --terminal-black: #000000;
+    --terminal-bright: #ffffff;
+    --terminal-red: #ff0000;
+    --terminal-glow: 0 0 10px var(--terminal-green);
+    --pip-green: #2ec27e;
+    --pip-dark: #001800;
+    --pip-light: #33ff33;
+    --pip-bg: #031403;
+    --pip-shadow: 0 0 10px rgba(46, 194, 126, 0.5);
 }
 
 * {
@@ -14,13 +20,12 @@
 }
 
 body {
-    background: var(--matrix-black);
-    color: var(--matrix-green);
-    overflow: hidden;
+    background: var(--terminal-black);
+    color: var(--terminal-green);
     height: 100vh;
+    overflow: hidden;
 }
 
-/* Matrix Canvas */
 #matrix {
     position: fixed;
     top: 0;
@@ -28,6 +33,180 @@ body {
     width: 100%;
     height: 100%;
     z-index: 1;
+}
+
+.terminal-container {
+    position: relative;
+    z-index: 2;
+    height: 100vh;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.terminal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: rgba(0, 20, 0, 0.9);
+    border: 1px solid var(--terminal-green);
+    margin-bottom: 20px;
+}
+
+.exit-btn {
+    background: none;
+    border: none;
+    color: var(--terminal-red);
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.exit-btn:hover {
+    color: var(--terminal-bright);
+    text-shadow: 0 0 10px var(--terminal-red);
+}
+
+.terminal-body {
+    flex: 1;
+    background: rgba(0, 20, 0, 0.9);
+    border: 1px solid var(--terminal-green);
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.terminal-output {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+
+.terminal-input-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.prompt {
+    color: var(--terminal-green);
+    font-weight: bold;
+}
+
+#terminalInput {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--terminal-green);
+    font-size: 1rem;
+    outline: none;
+}
+
+.output-line {
+    padding: 2px 0;
+    word-wrap: break-word;
+}
+
+.output-line.success {
+    color: var(--terminal-bright);
+}
+
+.output-line.error {
+    color: var(--terminal-red);
+}
+
+.error {
+    color: var(--terminal-red);
+}
+
+.success {
+    color: var(--terminal-bright);
+}
+
+.upload-area {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    max-width: 500px;
+    height: 300px;
+    background: rgba(0, 20, 0, 0.95);
+    border: 2px dashed var(--terminal-green);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: all 0.3s ease;
+}
+
+.upload-area.dragover {
+    background: rgba(0, 40, 0, 0.95);
+    border-color: var(--terminal-bright);
+    transform: translate(-50%, -52%);
+    box-shadow: 0 0 20px var(--terminal-green);
+}
+
+.upload-text {
+    text-align: center;
+    color: var(--terminal-green);
+}
+
+.upload-text i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    animation: float 2s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+#fileInput {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+#uploadProgress {
+    margin-top: 1rem;
+    width: 80%;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+/* Progress Bar Styles */
+.progress-item {
+    margin: 10px 0;
+    background: rgba(0, 20, 0, 0.5);
+    padding: 10px;
+    border: 1px solid var(--terminal-green);
+}
+
+.progress-text {
+    margin-bottom: 5px;
+    color: var(--terminal-green);
+}
+
+.progress-bar {
+    height: 4px;
+    width: 0;
+    background: var(--terminal-green);
+    transition: width 0.3s ease;
+}
+
+.progress-item.error .progress-bar {
+    background: var(--terminal-red);
+}
+
+.progress-item.success .progress-bar {
+    background: var(--terminal-bright);
 }
 
 /* Login Container */
@@ -181,160 +360,220 @@ body {
     50% { opacity: 0 }
 }
 
-/* Admin Panel Stilleri */
+/* Admin Panel Styles */
 .admin-container {
     position: relative;
     z-index: 2;
-    padding: 2rem;
+    padding: 1.5rem;
     height: 100vh;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem;
 }
 
 .admin-header {
+    background: var(--panel-bg);
+    border: 1px solid var(--matrix-green);
+    padding: 1.5rem;
+    border-radius: 5px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
-    background: rgba(0, 10, 0, 0.85);
-    border: 1px solid var(--matrix-green);
-    border-radius: 5px;
     box-shadow: var(--matrix-glow);
 }
 
 .title {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     text-shadow: var(--matrix-glow);
-}
-
-.exit-btn {
-    background: none;
-    border: 1px solid #ff0000;
-    color: #ff0000;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.exit-btn:hover {
-    background: #ff0000;
-    color: var(--matrix-black);
-    box-shadow: 0 0 10px #ff0000;
-}
-
-.note-section {
-    flex: 1;
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    background: rgba(0, 10, 0, 0.85);
-    border: 1px solid var(--matrix-green);
-    border-radius: 5px;
-    padding: 1rem;
-    box-shadow: var(--matrix-glow);
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.note-input {
+.subtitle {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-top: 0.3rem;
+}
+
+/* Buttons */
+.header-buttons {
     display: flex;
     gap: 1rem;
 }
 
-.note-input textarea {
-    flex: 1;
-    background: rgba(0, 10, 0, 0.9);
-    border: 1px solid var(--matrix-green);
-    color: var(--matrix-green);
-    padding: 1rem;
-    font-size: 1rem;
-    resize: none;
-    height: 100px;
-}
-
-.note-input button {
+.add-note-btn, .exit-btn {
     background: none;
-    border: 1px solid var(--matrix-green);
-    color: var(--matrix-green);
-    padding: 0.5rem 1rem;
+    border: 1px solid;
+    padding: 0.8rem 1.2rem;
+    font-family: 'Share Tech Mono', monospace;
     cursor: pointer;
     transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.note-input button:hover {
+.add-note-btn {
+    border-color: var(--matrix-green);
+    color: var(--matrix-green);
+}
+
+.add-note-btn:hover {
     background: var(--matrix-green);
     color: var(--matrix-black);
     box-shadow: var(--matrix-glow);
 }
 
-.notes-list {
-    flex: 1;
-    overflow-y: auto;
+.exit-btn {
+    border-color: var(--matrix-red);
+    color: var(--matrix-red);
+}
+
+.exit-btn:hover {
+    background: var(--matrix-red);
+    color: var(--matrix-black);
+    box-shadow: 0 0 10px var(--matrix-red);
+}
+
+/* Floating Add Button */
+.floating-add-btn {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--matrix-green);
+    border: none;
+    color: var(--matrix-black);
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: var(--matrix-glow);
+    transition: all 0.3s ease;
+    z-index: 100;
+}
+
+.floating-add-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px var(--matrix-green);
+}
+
+/* Note Input Panel */
+.note-input-panel {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 600px;
+    background: var(--panel-bg);
+    border: 1px solid var(--matrix-green);
+    border-radius: 5px;
+    box-shadow: var(--matrix-glow);
+    z-index: 1000;
+}
+
+.panel-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--matrix-green);
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--matrix-red);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close-btn:hover {
+    color: var(--matrix-bright);
+}
+
+.input-fields {
+    padding: 1.5rem;
+}
+
+.input-group {
+    margin-bottom: 1.5rem;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.input-group input,
+.input-group textarea {
+    width: 100%;
+    background: rgba(0, 20, 0, 0.5);
+    border: 1px solid var(--matrix-green);
+    color: var(--matrix-green);
+    padding: 1rem;
+    font-family: 'Share Tech Mono', monospace;
+    transition: all 0.3s ease;
+}
+
+.input-group textarea {
+    height: 150px;
+    resize: vertical;
+}
+
+.input-group input:focus,
+.input-group textarea:focus {
+    outline: none;
+    box-shadow: var(--matrix-glow);
+    border-color: var(--matrix-bright);
+}
+
+.panel-buttons {
+    padding: 1rem;
+    border-top: 1px solid var(--matrix-green);
+    display: flex;
+    justify-content: flex-end;
     gap: 1rem;
 }
 
-.note-item {
-    background: rgba(0, 10, 0, 0.9);
-    border: 1px solid var(--matrix-green);
-    padding: 1rem;
-    border-radius: 5px;
-}
-
-.note-title {
-    font-size: 1.2rem;
-    margin-bottom: 0.5rem;
-    color: var(--matrix-bright);
-    text-shadow: var(--matrix-glow);
-}
-
-.note-text {
-    margin-bottom: 0.5rem;
-}
-
-.note-date {
-    font-size: 0.8rem;
-    opacity: 0.8;
-}
-
-/* Not giriş alanı stillerini güncelle */
-.input-fields {
-    flex: 1;
+.save-btn, .cancel-btn {
+    padding: 0.8rem 1.5rem;
+    border: 1px solid;
+    font-family: 'Share Tech Mono', monospace;
+    cursor: pointer;
+    transition: all 0.3s ease;
     display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 0.5rem;
 }
 
-#noteTitle {
-    background: rgba(0, 10, 0, 0.9);
-    border: 1px solid var(--matrix-green);
+.save-btn {
+    border-color: var(--matrix-green);
     color: var(--matrix-green);
-    padding: 0.8rem;
-    font-size: 1.1rem;
-    font-family: 'Share Tech Mono', monospace;
 }
 
-#noteTitle:focus {
-    outline: none;
+.save-btn:hover {
+    background: var(--matrix-green);
+    color: var(--matrix-black);
     box-shadow: var(--matrix-glow);
 }
 
-.note-actions {
-    display: flex;
-    gap: 0.5rem;
+.cancel-btn {
+    border-color: var(--matrix-red);
+    color: var(--matrix-red);
 }
 
-.note-actions button {
-    background: none;
-    border: none;
-    color: var(--matrix-green);
-    cursor: pointer;
-    padding: 0.25rem;
-}
-
-.note-actions button:hover {
-    color: var(--matrix-bright);
-    text-shadow: var(--matrix-glow);
+.cancel-btn:hover {
+    background: var(--matrix-red);
+    color: var(--matrix-black);
+    box-shadow: 0 0 10px var(--matrix-red);
 }
 
 /* Gelişmiş Animasyonlar */
@@ -505,5 +744,753 @@ body {
     background: var(--matrix-red);
     color: var(--matrix-black);
     box-shadow: 0 0 10px var(--matrix-red);
+}
+
+/* Action Modal Styles */
+.action-modal {
+    background: rgba(0, 15, 0, 0.95);
+    border: 2px solid var(--matrix-green);
+    animation: modalGlow 2s infinite;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--matrix-green);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--matrix-red);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+    color: #ff0000;
+    text-shadow: 0 0 10px #ff0000;
+}
+
+.input-group {
+    margin: 1rem 0;
+}
+
+.matrix-input {
+    width: 100%;
+    background: rgba(0, 20, 0, 0.5);
+    border: 1px solid var(--matrix-green);
+    color: var(--matrix-green);
+    padding: 0.8rem;
+    font-family: 'Share Tech Mono', monospace;
+    transition: all 0.3s ease;
+}
+
+.matrix-input:focus {
+    outline: none;
+    box-shadow: 0 0 15px var(--matrix-green);
+    border-color: #fff;
+}
+
+textarea.matrix-input {
+    min-height: 150px;
+    resize: vertical;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.action-btn, .cancel-btn {
+    padding: 0.8rem 1.5rem;
+    border: 1px solid;
+    font-family: 'Share Tech Mono', monospace;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-btn {
+    background: none;
+    border-color: var(--matrix-green);
+    color: var(--matrix-green);
+}
+
+.action-btn:hover {
+    background: var(--matrix-green);
+    color: black;
+    box-shadow: 0 0 15px var(--matrix-green);
+}
+
+.cancel-btn {
+    background: none;
+    border-color: var(--matrix-red);
+    color: var(--matrix-red);
+}
+
+.cancel-btn:hover {
+    background: var(--matrix-red);
+    color: black;
+    box-shadow: 0 0 15px var(--matrix-red);
+}
+
+@keyframes modalGlow {
+    0%, 100% { box-shadow: 0 0 10px var(--matrix-green); }
+    50% { box-shadow: 0 0 20px var(--matrix-green); }
+}
+
+/* Matrix scan line effect */
+.action-modal::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--matrix-green);
+    animation: scanline 2s linear infinite;
+}
+
+@keyframes scanline {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(100%); }
+}
+
+/* Note Panel Animation */
+.note-input {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    background: rgba(0, 15, 0, 0.95);
+    border: 1px solid var(--matrix-green);
+    margin-bottom: 1rem;
+}
+
+.note-input.active {
+    max-height: 500px;
+    padding: 1rem;
+}
+
+.note-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.note-buttons button {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--matrix-green);
+    background: none;
+    color: var(--matrix-green);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.note-buttons button:hover {
+    background: var(--matrix-green);
+    color: black;
+    box-shadow: 0 0 15px var(--matrix-green);
+}
+
+.note-buttons .cancel-btn {
+    border-color: var(--matrix-red);
+    color: var(--matrix-red);
+}
+
+.note-buttons .cancel-btn:hover {
+    background: var(--matrix-red);
+    color: black;
+    box-shadow: 0 0 15px var(--matrix-red);
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 20, 0, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--terminal-green);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--terminal-bright);
+}
+
+/* Input styles */
+#accessCode {
+    background: none;
+    border: none;
+    color: var(--terminal-green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1rem;
+    outline: none;
+    flex: 1;
+}
+
+#accessCode::placeholder {
+    color: rgba(0, 255, 0, 0.3);
+}
+
+/* Input Container Styles */
+.input-container {
+    background: rgba(0, 20, 0, 0.9);
+    border: 1px solid var(--terminal-green);
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+    animation: glow 2s infinite alternate;
+}
+
+.input-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--terminal-green);
+}
+
+.input-header i {
+    font-size: 1.5rem;
+    color: var(--terminal-green);
+    animation: pulse 2s infinite;
+}
+
+.input-wrapper {
+    position: relative;
+    margin-top: 10px;
+}
+
+#accessCode {
+    width: 100%;
+    background: rgba(0, 20, 0, 0.7);
+    border: 1px solid var(--terminal-green);
+    color: var(--terminal-green);
+    padding: 12px;
+    font-size: 1.2rem;
+    letter-spacing: 4px;
+    transition: all 0.3s ease;
+}
+
+#accessCode:focus {
+    outline: none;
+    border-color: #fff;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
+}
+
+.input-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--terminal-green);
+    animation: scanline 2s linear infinite;
+}
+
+/* Animations */
+@keyframes scanline {
+    0% { transform: translateY(0); opacity: 0.5; }
+    50% { opacity: 0.2; }
+    100% { transform: translateY(100%); opacity: 0.5; }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+@keyframes glow {
+    0% { box-shadow: 0 0 20px rgba(0, 255, 0, 0.2); }
+    100% { box-shadow: 0 0 30px rgba(0, 255, 0, 0.4); }
+}
+
+@keyframes powerOn {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.02); opacity: 0.8; }
+    100% { transform: scale(50); opacity: 0; }
+}
+
+.terminal-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+    color: var(--terminal-green);
+}
+
+.terminal-label i {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* Boot Sequence Styles */
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes glitch {
+    0% {
+        transform: translate(0);
+        text-shadow: none;
+    }
+    20% {
+        transform: translate(-2px, 2px);
+        text-shadow: 2px 2px #0f0, -2px -2px #f00;
+    }
+    40% {
+        transform: translate(2px, -2px);
+        text-shadow: -2px -2px #0f0, 2px 2px #f00;
+    }
+    60% {
+        transform: translate(-2px, 2px);
+        text-shadow: 2px -2px #0f0, -2px 2px #f00;
+    }
+    80% {
+        transform: translate(2px, -2px);
+        text-shadow: -2px 2px #0f0, 2px -2px #f00;
+    }
+    100% {
+        transform: translate(0);
+        text-shadow: none;
+    }
+}
+
+.typing-text {
+    overflow: hidden;
+    border-right: 2px solid var(--terminal-green);
+    white-space: nowrap;
+    animation: typing 3.5s steps(40, end),
+               blink-caret .75s step-end infinite;
+    margin: 0;
+}
+
+@keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+}
+
+@keyframes blink-caret {
+    from, to { border-color: transparent }
+    50% { border-color: var(--terminal-green) }
+}
+
+/* Input glow effect */
+.input-container:hover {
+    animation: glitch 0.3s infinite;
+}
+
+.input-wrapper::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, 
+        transparent 0%,
+        rgba(0, 255, 0, 0.1) 45%,
+        rgba(0, 255, 0, 0.3) 50%,
+        rgba(0, 255, 0, 0.1) 55%,
+        transparent 100%);
+    z-index: -1;
+    animation: borderGlow 2s linear infinite;
+}
+
+@keyframes borderGlow {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error shake animation */
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-5px); }
+    40%, 80% { transform: translateX(5px); }
+}
+
+/* Success animation */
+@keyframes accessGranted {
+    0% { 
+        transform: scale(1);
+        filter: brightness(1);
+    }
+    50% { 
+        transform: scale(1.1);
+        filter: brightness(1.5);
+    }
+    100% { 
+        transform: scale(50);
+        filter: brightness(2);
+    }
+}
+
+.access-granted {
+    animation: accessGranted 1s forwards;
+}
+
+/* Pip-boy Styles */
+.pip-body {
+    background: var(--pip-bg);
+    color: var(--pip-green);
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+}
+
+/* Scan lines effect */
+.scan-lines {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        transparent 50%,
+        rgba(0, 0, 0, 0.05) 50%
+    );
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 999;
+}
+
+.pip-container {
+    background: var(--pip-dark);
+    border: 2px solid var(--pip-green);
+    border-radius: 10px;
+    box-shadow: var(--pip-shadow);
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 40px);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Header Styles */
+.pip-header {
+    background: var(--pip-bg);
+    border-bottom: 2px solid var(--pip-green);
+    display: flex;
+    justify-content: space-between;
+    padding: 15px;
+}
+
+.header-left, .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.pip-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-shadow: 0 0 5px var(--pip-green);
+}
+
+.pip-status {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.pip-time {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+/* Content Area */
+.pip-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.pip-sidebar {
+    background: var(--pip-bg);
+    border-right: 2px solid var(--pip-green);
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    width: 200px;
+}
+
+.pip-tab {
+    background: none;
+    border: 1px solid var(--pip-green);
+    color: var(--pip-green);
+    cursor: pointer;
+    margin-bottom: 10px;
+    padding: 10px;
+    text-align: left;
+    transition: all 0.3s ease;
+}
+
+.pip-tab:hover, .pip-tab.active {
+    background: var(--pip-green);
+    color: var(--pip-dark);
+    box-shadow: 0 0 10px var(--pip-green);
+}
+
+.pip-main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+/* Tab Content */
+.pip-tab-content {
+    display: none;
+    height: 100%;
+}
+
+.pip-tab-content.active {
+    display: block;
+}
+
+/* Notes List */
+.notes-list {
+    margin-bottom: 20px;
+}
+
+.note-item {
+    background: var(--pip-bg);
+    border: 1px solid var(--pip-green);
+    margin-bottom: 10px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.note-item:hover {
+    background: var(--pip-green);
+    color: var(--pip-dark);
+    box-shadow: 0 0 10px var(--pip-green);
+}
+
+/* Files List */
+.files-list {
+    margin-bottom: 20px;
+}
+
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--pip-bg);
+    border: 1px solid var(--pip-green);
+    margin-bottom: 10px;
+    padding: 15px;
+}
+
+/* Footer Stats */
+.pip-footer {
+    background: var(--pip-bg);
+    border-top: 2px solid var(--pip-green);
+    padding: 15px;
+}
+
+.stats {
+    display: flex;
+    gap: 20px;
+}
+
+.stat {
+    flex: 1;
+}
+
+.stat-label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.stat-bar {
+    background: var(--pip-dark);
+    border: 1px solid var(--pip-green);
+    height: 10px;
+    width: 100%;
+}
+
+.stat-fill {
+    background: var(--pip-green);
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+/* Modal */
+.pip-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+}
+
+.pip-modal-content {
+    background: var(--pip-dark);
+    border: 2px solid var(--pip-green);
+    border-radius: 5px;
+    box-shadow: var(--pip-shadow);
+    max-width: 500px;
+    margin: 50px auto;
+    padding: 20px;
+}
+
+.pip-input {
+    background: var(--pip-bg);
+    border: 1px solid var(--pip-green);
+    color: var(--pip-green);
+    display: block;
+    margin-bottom: 15px;
+    padding: 10px;
+    width: 100%;
+}
+
+.pip-input:focus {
+    outline: none;
+    box-shadow: 0 0 10px var(--pip-green);
+}
+
+/* Buttons */
+.pip-btn {
+    background: none;
+    border: 1px solid var(--pip-green);
+    color: var(--pip-green);
+    cursor: pointer;
+    padding: 8px 15px;
+    transition: all 0.3s ease;
+}
+
+.pip-btn:hover {
+    background: var(--pip-green);
+    color: var(--pip-dark);
+    box-shadow: 0 0 10px var(--pip-green);
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* Terminal specific styles within pip-boy */
+#terminal-content .terminal-output {
+    height: calc(100% - 40px);
+    overflow-y: auto;
+    padding: 10px;
+    background: var(--pip-bg);
+    border: 1px solid var(--pip-green);
+}
+
+#terminal-content .terminal-input-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#terminal-content input {
+    background: none;
+    border: none;
+    color: var(--pip-green);
+    flex: 1;
+    font-family: 'Share Tech Mono', monospace;
+}
+
+#terminal-content input:focus {
+    outline: none;
+}
+
+/* Notes Tab Styles */
+.notes-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.note-box {
+    background: var(--pip-bg);
+    border: 1px solid var(--pip-green);
+    padding: 15px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.note-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px var(--pip-green);
+}
+
+.note-box-title {
+    color: var(--pip-light);
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    padding-right: 60px;
+}
+
+.note-box-content {
+    color: var(--pip-green);
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+    max-height: 100px;
+    overflow: hidden;
+}
+
+.note-box-date {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.note-box-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 5px;
+}
+
+.note-action-btn {
+    background: none;
+    border: 1px solid var(--pip-green);
+    color: var(--pip-green);
+    cursor: pointer;
+    padding: 5px;
+    font-size: 0.8rem;
+    transition: all 0.3s ease;
+}
+
+.note-action-btn:hover {
+    background: var(--pip-green);
+    color: var(--pip-dark);
+}
+
+.note-action-btn.delete {
+    border-color: var(--terminal-red);
+    color: var(--terminal-red);
+}
+
+.note-action-btn.delete:hover {
+    background: var(--terminal-red);
+    color: var(--pip-dark);
 }
 

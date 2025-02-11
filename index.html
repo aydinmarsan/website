@@ -6,8 +6,28 @@
     <title>Matrix Login</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .boot-sequence {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            color: var(--terminal-green);
+            padding: 20px;
+            font-family: 'Share Tech Mono', monospace;
+            z-index: 1000;
+            overflow: hidden;
+            white-space: pre;
+        }
+    </style>
 </head>
 <body>
+    <!-- Boot sequence overlay -->
+    <div class="boot-sequence" id="bootSequence"></div>
+
     <!-- Matrix Arka Plan -->
     <canvas id="matrix"></canvas>
 
@@ -16,30 +36,149 @@
         <div class="login-box">
             <div class="ascii-art">
                 <pre>
- ███▄ ▄███▓ ▄▄▄       ██▀███    ██████  ▄▄▄       ███▄    █ 
-▓██▒▀█▀ ██▒▒████▄    ▓██ ▒ ██▒▒██    ▒ ▒████▄     ██ ▀█   █ 
-▓██    ▓██░▒██  ▀█▄  ▓██ ░▄█ ▒░ ▓██▄   ▒██  ▀█▄  ▓██  ▀█ ██▒
-▒██    ▒██ ░██▄▄▄▄██ ▒██▀▀█▄    ▒   ██▒░██▄▄▄▄██ ▓██▒  ▐▌██▒
-▒██▒   ░██▒ ▓█   ▓██▒░██▓ ▒██▒▒██████▒▒ ▓█   ▓██▒▒██░   ▓██░
-░ ▒░   ░  ░ ▒▒   ▓▒█░░ ▒▓ ░▒▓░▒ ▒▓▒ ▒ ░ ▒▒   ▓▒█░░ ▒░   ▒ ▒ 
-░  ░      ░  ▒   ▒▒ ░  ░▒ ░ ▒░░ ░▒  ░ ░  ▒   ▒▒ ░░ ░░   ░ ▒░
-░      ░     ░   ▒     ░░   ░ ░  ░  ░    ░   ▒      ░   ░ ░ 
-       ░         ░  ░   ░           ░          ░  ░         ░ </pre>
+  ███▄ ▄███▓ ▄▄▄       ██▀███    ██████  ▄▄▄       ███▄    █ 
+ ▓██▒▀█▀ ██▒▒████▄    ▓██ ▒ ██▒▒██    ▒ ▒████▄     ██ ▀█   █ 
+ ▓██    ▓██░▒██  ▀█▄  ▓██ ░▄█ ▒░ ▓██▄   ▒██  ▀█▄  ▓██  ▀█ ██▒
+ ▒██    ▒██ ░██▄▄▄▄██ ▒██▀▀█▄    ▒   ██▒░██▄▄▄▄██ ▓██▒  ▐▌██▒
+ ▒██▒   ░██▒ ▓█   ▓██▒░██▓ ▒██▒▒██████▒▒ ▓█   ▓██▒▒██░   ▓██░
+ ░ ▒░   ░  ░ ▒▒   ▓▒█░░ ▒▓ ░▒▓░▒ ▒▓▒ ▒ ░ ▒▒   ▓▒█░░ ▒░   ▒ ▒ 
+ ░  ░      ░  ▒   ▒▒ ░  ░▒ ░ ▒░░ ░▒  ░ ░  ▒   ▒▒ ░░ ░░   ░ ▒░
+ ░      ░     ░   ▒     ░░   ░ ░  ░  ░    ░   ▒      ░   ░ ░ 
+        ░         ░  ░   ░           ░          ░  ░         ░ </pre>
             </div>
             <div class="system-info">
-                <div class="typing-text">TERMINAL v2.0</div>
+                <div class="typing-text">TERMINAL v3.0</div>
                 <div class="access-text blink">SECURITY CLEARANCE REQUIRED</div>
             </div>
             <div class="login-form">
-                <div class="input-group">
-                    <label class="terminal-label">> ENTER ACCESS CODE:</label>
-                    <input type="password" id="accessCode" autocomplete="off">
+                <div class="input-container">
+                    <div class="input-header">
+                        <i class="fas fa-lock"></i>
+                        <span class="typing-text">SECURE ACCESS TERMINAL</span>
+                    </div>
+                    <div class="input-group">
+                        <label class="terminal-label">
+                            <i class="fas fa-chevron-right"></i>
+                            ENTER ACCESS CODE:
+                        </label>
+                        <div class="input-wrapper">
+                            <input type="password" 
+                                   id="accessCode" 
+                                   autocomplete="off" 
+                                   spellcheck="false"
+                                   maxlength="16"
+                                   placeholder="****************">
+                            <div class="input-glow"></div>
+                        </div>
+                    </div>
+                    <div id="accessMessage" class="output-line"></div>
                 </div>
-                <div id="accessMessage"></div>
             </div>
         </div>
     </div>
 
-    <script src="login.js"></script>
+    <script src="matrix.js"></script>
+    <script>
+        // Boot sequence
+        const bootTexts = [
+            { text: 'INITIALIZING SYSTEM...', delay: 1000 },
+            { text: 'CHECKING HARDWARE COMPONENTS...', delay: 800 },
+            { text: '[OK] CPU: Intel Matrix-X9 Quantum', delay: 300 },
+            { text: '[OK] MEMORY: 128TB Quantum RAM', delay: 300 },
+            { text: '[OK] STORAGE: 1PB Neural Storage', delay: 300 },
+            { text: 'LOADING KERNEL v4.0.1...', delay: 1000 },
+            { text: 'ESTABLISHING QUANTUM ENCRYPTION...', delay: 800 },
+            { text: 'CHECKING SECURITY PROTOCOLS...', delay: 800 },
+            { text: '[WARNING] UNAUTHORIZED ACCESS DETECTED', delay: 500 },
+            { text: 'ACTIVATING DEFENSE SYSTEMS...', delay: 800 },
+            { text: 'INITIALIZING MATRIX INTERFACE...', delay: 1000 },
+            { text: 'SYSTEM READY.', delay: 500 }
+        ];
+
+        async function bootAnimation() {
+            const boot = document.getElementById('bootSequence');
+            let fullText = '';
+
+            // Matrix yağmuru başlat ama yarı saydam
+            const matrix = new MatrixEffect();
+            matrix.start();
+            document.getElementById('matrix').style.opacity = '0.1';
+
+            for (let item of bootTexts) {
+                fullText += '> ' + item.text + '\n';
+                boot.textContent = fullText;
+                await new Promise(r => setTimeout(r, item.delay));
+                
+                // Bazı özel efektler
+                if (item.text.includes('[WARNING]')) {
+                    boot.style.color = '#ff0000';
+                    await new Promise(r => setTimeout(r, 200));
+                    boot.style.color = '#00ff00';
+                }
+                
+                if (item.text.includes('[OK]')) {
+                    boot.style.color = '#00ff88';
+                    await new Promise(r => setTimeout(r, 100));
+                    boot.style.color = '#00ff00';
+                }
+            }
+
+            // Matrix yağmurunu tam görünür yap
+            const canvas = document.getElementById('matrix');
+            canvas.style.transition = 'opacity 2s';
+            canvas.style.opacity = '1';
+
+            // Boot ekranını kaldır
+            await new Promise(r => setTimeout(r, 1000));
+            boot.style.animation = 'fadeOut 1.5s forwards';
+            
+            setTimeout(() => {
+                boot.style.display = 'none';
+                document.getElementById('accessCode').focus();
+            }, 1500);
+        }
+
+        // Giriş işlemi
+        document.getElementById('accessCode').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const code = this.value.trim();
+                const message = document.getElementById('accessMessage');
+                
+                if (code === '112263') {
+                    message.className = 'output-line success';
+                    message.textContent = 'ACCESS GRANTED - INITIALIZING SYSTEM...';
+                    
+                    localStorage.setItem('isLoggedIn', 'true');
+                    
+                    // Giriş animasyonu
+                    document.querySelector('.login-box').style.animation = 'powerOn 1.5s forwards';
+                    
+                    // Matrix hızlandırma efekti
+                    const matrix = new MatrixEffect();
+                    matrix.speedUp();
+                    
+                    setTimeout(() => {
+                        window.location.href = 'admin.html';
+                    }, 1500);
+                } else {
+                    message.className = 'output-line error';
+                    message.textContent = 'ACCESS DENIED';
+                    this.value = '';
+                    
+                    // Hata animasyonu
+                    document.body.style.animation = 'glitch 0.3s';
+                    setTimeout(() => {
+                        document.body.style.animation = '';
+                    }, 500);
+                }
+            }
+        });
+
+        // Sayfa yüklendiğinde boot animasyonunu başlat
+        document.addEventListener('DOMContentLoaded', bootAnimation);
+
+        // Otomatik fokus
+        document.getElementById('accessCode').focus();
+    </script>
 </body>
 </html>
