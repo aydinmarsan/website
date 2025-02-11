@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+    
+    <div class="admin-container">
+        <div class="admin-header">
+            <div class="title">ADMIN TERMINAL</div>
+            <button class="exit-btn" onclick="logout()">EXIT</button>
+        </div>
+        
+        <div class="note-section">
+            <div class="note-input">
+                <div class="input-fields">
+                    <input type="text" id="noteTitle" placeholder="Enter note title..." maxlength="50">
+                    <textarea id="noteText" placeholder="Enter your note..."></textarea>
+                </div>
+                <button onclick="saveNote()">SAVE NOTE</button>
+            </div>
+            
+            <div class="notes-list" id="notesList">
+                <!-- Notlar buraya eklenecek -->
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html> 

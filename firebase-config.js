@@ -1,12 +1,11 @@
 // Firebase yapılandırması
 const firebaseConfig = {
-    apiKey: "AIzaSyDFXNxwFTOBFPd9mlfUSKw8QLSDYov4M3k",
-    authDomain: "marsanstudio-221ef.firebaseapp.com",
-    projectId: "marsanstudio-221ef",
-    storageBucket: "marsanstudio-221ef.firebasestorage.app",
-    messagingSenderId: "502939095270",
-    appId: "1:502939095270:web:db6756c4d2dd0e10fbab27",
-    measurementId: "G-6T7YMYVG6G"
+    apiKey: "AIzaSyB-T7aB6-twopuefLz0sLg0Ti2HYy2hpiI",
+    authDomain: "marsanstudio-7dc9b.firebaseapp.com",
+    projectId: "marsanstudio-7dc9b",
+    storageBucket: "marsanstudio-7dc9b.appspot.com",
+    messagingSenderId: "298325681308",
+    appId: "1:298325681308:web:185dcba36010d59aae7959"
 };
 
 // Firebase'i başlat
@@ -17,4 +16,10 @@ const storage = firebase.storage();
 const db = firebase.firestore();
 
 // Firebase servislerini başlat
-const auth = firebase.auth(); 
+const auth = firebase.auth();
+
+// Firestore ayarları
+db.settings({
+    timestampsInSnapshots: true,
+    merge: true
+}); 

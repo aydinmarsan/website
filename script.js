@@ -221,52 +221,149 @@ function resetAllForms() {
     menus.forEach(menu => menu.remove());
 }
 
-// Şifre kontrolü ve operatör konsolu geçişi
+// Giriş kontrolü
 function verifyAccess() {
-    const code = document.getElementById('accessCode').value;
-    const output = document.querySelector('.terminal-output');
+    const accessCode = document.getElementById('accessCode').value;
+    const accessMessage = document.getElementById('accessMessage');
     
-    if (code === '112263') {
-        typeWriterEffect(output, '\n> ACCESS GRANTED\n> INITIALIZING OPERATOR CONSOLE...', 50)
-            .then(() => {
-                setTimeout(() => {
-                    hideLogin();
-                    showOperatorConsole();
-                }, 1500);
-            });
-    } else {
-        typeWriterEffect(output, '\n> ACCESS DENIED\n> SECURITY ALERT TRIGGERED', 50);
-        shakeEffect(document.querySelector('.terminal-window'));
+    if (accessCode === '112263') {
+        accessMessage.textContent = 'ACCESS GRANTED - INITIALIZING SYSTEM...';
+        accessMessage.className = 'access-message success';
+        
+        // Terminal başlatma animasyonu
         setTimeout(() => {
-            document.getElementById('accessCode').value = '';
-        }, 500);
+            document.getElementById('loginPanel').style.display = 'none';
+            document.getElementById('terminalPanel').style.display = 'block';
+            initializeSystem();
+        }, 1500);
+    } else {
+        accessMessage.textContent = 'ACCESS DENIED - INVALID CODE';
+        accessMessage.className = 'access-message error';
+        document.getElementById('accessCode').value = '';
     }
 }
 
-// Operatör konsolu gösterme
-function showOperatorConsole() {
-    const mainPanel = document.getElementById('mainPanel');
-    mainPanel.style.display = 'block';
-    mainPanel.classList.add('fade-in');
-    
-    // Giriş panelini gizle
-    document.getElementById('loginPanel').style.display = 'none';
-    
-    // Matrix başlığını gizle
-    document.querySelector('header').style.display = 'none';
-    
-    // İstatistikleri yükle
-    loadItems();
+// Sistem başlatma
+function initializeSystem() {
+    loadInventory();
+    updateSystemStatus();
+    startClock();
 }
 
-// Login panelini gizle
-function hideLogin() {
-    const loginPanel = document.getElementById('loginPanel');
-    loginPanel.classList.add('fade-out');
-    setTimeout(() => {
-        loginPanel.style.display = 'none';
-        loginPanel.classList.remove('fade-out');
-    }, 500);
+// Görünüm değiştirme
+function switchView(viewName) {
+    // Aktif menü butonunu güncelle
+    document.querySelectorAll('.menu-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[onclick="switchView('${viewName}')"]`).classList.add('active');
+    
+    // Görünümleri güncelle
+    document.querySelectorAll('.content-view').forEach(view => {
+        view.classList.remove('active');
+    });
+    document.getElementById(`${viewName}View`).classList.add('active');
+    
+    // İlgili verileri yükle
+    switch(viewName) {
+        case 'inventory':
+            loadInventory();
+            break;
+        case 'stock':
+            loadStock();
+            break;
+        case 'shipping':
+            loadShipments();
+            break;
+        case 'reports':
+            loadReports();
+            break;
+    }
+}
+
+// Envanter yükleme
+async function loadInventory() {
+    const grid = document.getElementById('inventoryGrid');
+    grid.innerHTML = '<div class="loading">LOADING INVENTORY DATA...</div>';
+    
+    try {
+        const snapshot = await db.collection('inventory').get();
+        grid.innerHTML = '';
+        
+        if (snapshot.empty) {
+            grid.innerHTML = '<div class="empty">NO ITEMS FOUND IN INVENTORY</div>';
+            return;
+        }
+        
+        snapshot.forEach(doc => {
+            const item = doc.data();
+            const card = createInventoryCard(doc.id, item);
+            grid.appendChild(card);
+        });
+    } catch (error) {
+        console.error('Error loading inventory:', error);
+        grid.innerHTML = '<div class="error">ERROR LOADING INVENTORY DATA</div>';
+    }
+}
+
+// Envanter kartı oluşturma
+function createInventoryCard(id, item) {
+    const div = document.createElement('div');
+    div.className = 'inventory-card';
+    div.innerHTML = `
+        <div class="card-header">
+            <h3>${item.name}</h3>
+            <span class="item-code">#${item.code}</span>
+        </div>
+        <div class="card-body">
+            <div class="item-info">
+                <span>Stock: ${item.quantity}</span>
+                <span>Location: ${item.location}</span>
+            </div>
+            <div class="item-status ${item.quantity > 0 ? 'in-stock' : 'out-of-stock'}">
+                ${item.quantity > 0 ? 'IN STOCK' : 'OUT OF STOCK'}
+            </div>
+        </div>
+        <div class="card-footer">
+            <button onclick="editItem('${id}')" class="card-btn">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="deleteItem('${id}')" class="card-btn danger">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    return div;
+}
+
+// Sistem durumu güncelleme
+function updateSystemStatus() {
+    const now = new Date();
+    const uptime = Math.floor((now - startTime) / 1000);
+    document.getElementById('systemUptime').textContent = formatUptime(uptime);
+}
+
+// Saat güncelleme
+function startClock() {
+    const timeElement = document.getElementById('currentTime');
+    setInterval(() => {
+        const now = new Date();
+        timeElement.textContent = now.toLocaleTimeString('tr-TR', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }, 1000);
+}
+
+// Çıkış işlemi
+function logout() {
+    if (confirm('CONFIRM SYSTEM SHUTDOWN?')) {
+        document.getElementById('terminalPanel').style.display = 'none';
+        document.getElementById('loginPanel').style.display = 'flex';
+        document.getElementById('accessCode').value = '';
+    }
 }
 
 // Typewriter efekti
@@ -306,70 +403,6 @@ function showDashboardSection(sectionId) {
     event.currentTarget.classList.add('active');
 }
 
-// Çıkış fonksiyonu
-function logout() {
-    // Onay dialogu göster
-    showConfirm('Çıkış yapmak istediğinizden emin misiniz?', () => {
-        // Matrix başlığını göster
-        document.querySelector('header').style.display = 'block';
-        
-        // Operatör konsolunu gizle
-        const mainPanel = document.getElementById('mainPanel');
-        mainPanel.classList.remove('fade-in');
-        mainPanel.classList.add('fade-out');
-        
-        setTimeout(() => {
-            mainPanel.style.display = 'none';
-            mainPanel.classList.remove('fade-out');
-            
-            // Login panelini göster
-            const loginPanel = document.getElementById('loginPanel');
-            loginPanel.style.display = 'block';
-            loginPanel.classList.add('fade-in');
-            
-            // Şifre alanını temizle
-            document.getElementById('accessCode').value = '';
-            document.querySelector('.terminal-output').innerHTML = '';
-        }, 500);
-    });
-}
-
-// Onay dialogu gösterme fonksiyonu
-function showConfirm(message, callback) {
-    const dialog = document.createElement('div');
-    dialog.className = 'confirm-dialog';
-    dialog.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-exclamation-triangle"></i> CONFIRM</h3>
-            </div>
-            <div class="modal-body">
-                <p>${message}</p>
-                <div class="button-group">
-                    <button onclick="handleConfirm(true)" class="confirm-btn">
-                        <i class="fas fa-check"></i> YES
-                    </button>
-                    <button onclick="handleConfirm(false)" class="confirm-btn cancel">
-                        <i class="fas fa-times"></i> NO
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(dialog);
-    window.confirmCallback = callback;
-}
-
-// Onay işlemi
-function handleConfirm(confirmed) {
-    const dialog = document.querySelector('.confirm-dialog');
-    if (confirmed && window.confirmCallback) {
-        window.confirmCallback();
-    }
-    dialog.remove();
-    delete window.confirmCallback;
-}
-
 // Bildirim gösterme
 function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
@@ -399,6 +432,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Dashboard istatistiklerini güncelle
     updateDashboardStats();
+
+    initMatrix();
+    setInterval(updateClock, 1000);
+    updateClock();
+    loadNotes();
 });
 
 // Tema değiştirme
@@ -939,22 +977,22 @@ function createFileCard(id, file) {
     div.innerHTML = `
         <div class="file-icon">
             <i class="fas ${getFileIcon(file.type)}"></i>
-        </div>
+            </div>
         <div class="file-info">
             <h3>${file.name}</h3>
             <p>${file.description || 'No description'}</p>
             <span class="file-meta">
                 ${formatFileSize(file.size)} • ${formatDate(file.uploadDate)}
             </span>
-        </div>
+            </div>
         <div class="file-actions">
             <button onclick="downloadFile('${file.url}', '${file.originalName}')" class="action-btn">
-                <i class="fas fa-download"></i>
-            </button>
+                    <i class="fas fa-download"></i>
+                </button>
             <button onclick="deleteFile('${id}')" class="action-btn delete">
                 <i class="fas fa-trash"></i>
-            </button>
-        </div>
+                </button>
+            </div>
     `;
     return div;
 }
@@ -1014,40 +1052,6 @@ function formatDate(timestamp) {
     return date.toLocaleDateString();
 }
 
-// View değiştirme fonksiyonu
-function switchView(viewName) {
-    // Tüm butonların active sınıfını kaldır
-    document.querySelectorAll('.menu-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    // Tıklanan butonu active yap
-    event.currentTarget.classList.add('active');
-    
-    // Tüm görünümleri gizle
-    document.querySelectorAll('.content-view').forEach(view => {
-        view.classList.remove('active');
-    });
-    
-    // Seçilen görünümü göster
-    const selectedView = document.getElementById(`${viewName}View`);
-    
-    // Önce display'i block yap
-    selectedView.style.display = 'block';
-    
-    // Kısa bir gecikme ile active sınıfını ekle (animasyon için)
-    setTimeout(() => {
-        selectedView.classList.add('active');
-    }, 50);
-
-    // İlgili içeriği yükle
-    if (viewName === 'files') {
-        loadFiles();
-    } else if (viewName === 'notes') {
-        loadNotes();
-    }
-}
-
 // Not ekleme işlemi
 async function handleNoteAdd(event) {
     event.preventDefault();
@@ -1056,6 +1060,8 @@ async function handleNoteAdd(event) {
     const content = document.getElementById('noteContent').value;
 
     try {
+        showNotification('ENCRYPTING NOTE...', 'process');
+        
         await db.collection('notes').add({
             title: title,
             content: content,
@@ -1063,17 +1069,18 @@ async function handleNoteAdd(event) {
         });
 
         hideModal('noteModal');
+        showNotification('NOTE ENCRYPTED AND SAVED');
         loadNotes();
-        showNotification('Not başarıyla eklendi');
     } catch (error) {
-        showNotification('Hata: ' + error.message, 'error');
+        console.error('Error:', error);
+        showNotification('ERROR: ' + error.message, 'error');
     }
 }
 
 // Notları yükle
 async function loadNotes() {
     const notesGrid = document.getElementById('notesGrid');
-    notesGrid.innerHTML = '<div class="loading">Yükleniyor...</div>';
+    notesGrid.innerHTML = '<div class="loading">LOADING NOTES...</div>';
 
     try {
         const snapshot = await db.collection('notes')
@@ -1083,17 +1090,19 @@ async function loadNotes() {
         notesGrid.innerHTML = '';
         
         if (snapshot.empty) {
-            notesGrid.innerHTML = '<div class="empty">Henüz not eklenmemiş</div>';
+            notesGrid.innerHTML = '<div class="empty">NO NOTES FOUND</div>';
             return;
         }
 
         snapshot.forEach(doc => {
             const note = doc.data();
-            notesGrid.appendChild(createNoteCard(doc.id, note));
+            const noteCard = createNoteCard(doc.id, note);
+            notesGrid.appendChild(noteCard);
         });
+
     } catch (error) {
-        notesGrid.innerHTML = '<div class="error">Hata oluştu</div>';
-        console.error('Not yükleme hatası:', error);
+        console.error('Error loading notes:', error); // Debug için
+        notesGrid.innerHTML = '<div class="error">ERROR LOADING NOTES</div>';
     }
 }
 
@@ -1105,114 +1114,28 @@ function createNoteCard(id, note) {
         <h3 class="note-title">${note.title}</h3>
         <p class="note-content">${note.content}</p>
         <div class="note-footer">
-            <span class="note-date">${formatDate(note.createdAt)}</span>
+            <span class="note-date">CREATED: ${formatDate(note.createdAt)}</span>
             <button onclick="deleteNote('${id}')" class="delete-btn">
                 <i class="fas fa-trash"></i>
-            </button>
-        </div>
+                </button>
+            </div>
     `;
     return div;
 }
 
-// Not sil
+// Not silme
 async function deleteNote(id) {
-    if (!confirm('Bu notu silmek istediğinizden emin misiniz?')) return;
+    if (!confirm('DELETE THIS NOTE?')) return;
 
     try {
         await db.collection('notes').doc(id).delete();
+        showNotification('NOTE DELETED');
         loadNotes();
-        showNotification('Not başarıyla silindi');
     } catch (error) {
-        showNotification('Hata: ' + error.message, 'error');
+        console.error('Error deleting note:', error); // Debug için
+        showNotification('ERROR: ' + error.message, 'error');
     }
 }
-
-// Sayaçları güncelle
-function updateCounts() {
-    db.collection('files').get().then(snapshot => {
-        document.getElementById('fileCount').textContent = snapshot.size;
-    });
-    
-    db.collection('notes').get().then(snapshot => {
-        document.getElementById('noteCount').textContent = snapshot.size;
-    });
-}
-
-// Matrix yağmur efekti
-function initMatrixRain() {
-    const canvas = document.getElementById('matrixLoginCanvas');
-    const ctx = canvas.getContext('2d');
-
-    // Canvas boyutunu ekrana göre ayarla
-    function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    // Matrix karakterleri (Katakana + Latin + Sayılar)
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
-    const charArray = chars.split('');
-    
-    const fontSize = 14;
-    const columns = canvas.width / fontSize;
-    const drops = [];
-
-    // Her sütun için başlangıç Y pozisyonları
-    for (let i = 0; i < columns; i++) {
-        drops[i] = Math.floor(Math.random() * -100); // Rastgele başlangıç pozisyonları
-    }
-
-    function draw() {
-        // Yarı saydam siyah arkaplan (iz efekti için)
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Matrix yağmuru çiz
-        ctx.fillStyle = '#0F0';
-        ctx.font = `bold ${fontSize}px 'Share Tech Mono'`;
-
-        for (let i = 0; i < drops.length; i++) {
-            // Rastgele karakter seç
-            const char = charArray[Math.floor(Math.random() * charArray.length)];
-            
-            // Parlak efekt için
-            const y = drops[i] * fontSize;
-            if (y > 0) {
-                // Baştaki karakteri daha parlak yap
-                ctx.fillStyle = '#0F0';
-                ctx.fillText(char, i * fontSize, y);
-                
-                // Arkasından gelen karakterleri daha soluk yap
-                for (let j = 1; j < 5; j++) {
-                    const opacity = 1 - (j * 0.2);
-                    ctx.fillStyle = `rgba(0, 255, 0, ${opacity})`;
-                    ctx.fillText(
-                        charArray[Math.floor(Math.random() * charArray.length)],
-                        i * fontSize,
-                        y - (j * fontSize)
-                    );
-                }
-            }
-
-            // Karakterleri aşağı kaydır
-            drops[i]++;
-
-            // Ekranın altına ulaşınca yukarı taşı
-            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-                drops[i] = 0;
-            }
-        }
-
-        requestAnimationFrame(draw);
-    }
-
-    draw();
-}
-
-// Sayfa yüklendiğinde Matrix efektini başlat
-document.addEventListener('DOMContentLoaded', initMatrixRain);
 
 // Modal işlemleri
 function showNoteModal() {
@@ -1224,88 +1147,9 @@ function hideModal(modalId) {
     document.getElementById('noteForm').reset();
 }
 
-// Not ekleme
-async function handleNoteAdd(event) {
-    event.preventDefault();
-    
-    const title = document.getElementById('noteTitle').value;
-    const content = document.getElementById('noteContent').value;
-
-    try {
-        await db.collection('notes').add({
-            title: title,
-            content: content,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        hideModal('noteModal');
-        loadNotes();
-        showNotification('Not başarıyla eklendi');
-    } catch (error) {
-        showNotification('Hata: ' + error.message, 'error');
-    }
-}
-
-// Notları yükle
-async function loadNotes() {
-    const notesGrid = document.getElementById('notesGrid');
-    notesGrid.innerHTML = '<div class="loading">Yükleniyor...</div>';
-
-    try {
-        const snapshot = await db.collection('notes')
-            .orderBy('createdAt', 'desc')
-            .get();
-
-        notesGrid.innerHTML = '';
-        
-        if (snapshot.empty) {
-            notesGrid.innerHTML = '<div class="empty">Henüz not eklenmemiş</div>';
-            return;
-        }
-
-        snapshot.forEach(doc => {
-            const note = doc.data();
-            notesGrid.appendChild(createNoteCard(doc.id, note));
-        });
-    } catch (error) {
-        notesGrid.innerHTML = '<div class="error">Hata oluştu</div>';
-        console.error('Not yükleme hatası:', error);
-    }
-}
-
-// Not kartı oluştur
-function createNoteCard(id, note) {
-    const div = document.createElement('div');
-    div.className = 'note-card';
-    div.innerHTML = `
-        <h3 class="note-title">${note.title}</h3>
-        <p class="note-content">${note.content}</p>
-        <div class="note-footer">
-            <span class="note-date">${formatDate(note.createdAt)}</span>
-            <button onclick="deleteNote('${id}')" class="delete-btn">
-                <i class="fas fa-trash"></i>
-            </button>
-        </div>
-    `;
-    return div;
-}
-
-// Not sil
-async function deleteNote(id) {
-    if (!confirm('Bu notu silmek istediğinizden emin misiniz?')) return;
-
-    try {
-        await db.collection('notes').doc(id).delete();
-        loadNotes();
-        showNotification('Not başarıyla silindi');
-    } catch (error) {
-        showNotification('Hata: ' + error.message, 'error');
-    }
-}
-
-// Yardımcı fonksiyonlar
+// Tarih formatla
 function formatDate(timestamp) {
-    if (!timestamp) return '';
+    if (!timestamp) return 'N/A';
     const date = timestamp.toDate();
     return date.toLocaleDateString('tr-TR', {
         year: 'numeric',
@@ -1316,11 +1160,99 @@ function formatDate(timestamp) {
     });
 }
 
-function showNotification(message, type = 'success') {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    document.body.appendChild(notification);
+// Saat güncellemesi
+function updateClock() {
+    const timeElement = document.getElementById('currentTime');
+    const now = new Date();
+    timeElement.textContent = now.toLocaleTimeString('tr-TR', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+}
 
-    setTimeout(() => notification.remove(), 3000);
+// Matrix yağmur efekti
+function initMatrix() {
+    const canvas = document.getElementById('matrix');
+    const ctx = canvas.getContext('2d');
+
+    // Canvas boyutunu ayarla
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Matrix karakterleri
+    const chars = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789';
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+
+    // Yağmur efekti
+    function draw() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        for (let i = 0; i < drops.length; i++) {
+            const char = chars[Math.floor(Math.random() * chars.length)];
+            const x = i * fontSize;
+            const y = drops[i] * fontSize;
+
+            // Rastgele parlaklık efekti
+            const brightness = Math.random();
+            if (brightness < 0.1) {
+                ctx.fillStyle = '#FFF'; // Parlak beyaz
+            } else if (brightness < 0.3) {
+                ctx.fillStyle = '#AFA'; // Açık yeşil
+            } else {
+                ctx.fillStyle = '#0F0'; // Normal yeşil
+            }
+
+            ctx.font = `${fontSize}px monospace`;
+            ctx.fillText(char, x, y);
+
+            if (y > canvas.height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+        requestAnimationFrame(draw);
+    }
+    draw();
+}
+
+// Sayfa yüklendiğinde matrix efektini başlat
+document.addEventListener('DOMContentLoaded', function() {
+    // Matrix efektini başlat
+    initMatrix();
+    
+    // Enter tuşuna basıldığında giriş kontrolü
+    document.getElementById('accessCode').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            checkAccess();
+        }
+    });
+});
+
+function checkAccess() {
+    const accessCode = document.getElementById('accessCode').value;
+    const accessMessage = document.getElementById('accessMessage');
+    
+    if (accessCode === '112263') {
+        accessMessage.style.color = '#0F0';
+        accessMessage.style.textShadow = '0 0 10px #0F0';
+        accessMessage.textContent = 'ACCESS GRANTED';
+        
+        setTimeout(() => {
+            window.location.href = 'terminal.html'; // Terminal sayfasına yönlendir
+        }, 1500);
+    } else {
+        accessMessage.style.color = '#F00';
+        accessMessage.style.textShadow = '0 0 10px #F00';
+        accessMessage.textContent = 'ACCESS DENIED';
+        document.getElementById('accessCode').value = '';
+    }
 } 

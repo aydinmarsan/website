@@ -3,171 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marsan Control Panel</title>
+    <title>Matrix Login</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    
-    <!-- Firebase config -->
-    <script src="firebase-config.js"></script>
 </head>
 <body>
     <!-- Matrix Arka Plan -->
-    <canvas id="matrixCanvas"></canvas>
+    <canvas id="matrix"></canvas>
 
-    <!-- Ana Başlık -->
-    <header style="display: none;">
-        <h1 class="glitch" data-text="MARSAN">MARSAN</h1>
-    </header>
-
-    <!-- Login Panel -->
-    <div id="loginPanel" class="panel">
-        <div class="matrix-login">
-            <div class="login-header">
-                <div class="matrix-title">MARSAN SECURITY SYSTEM</div>
-                <div class="matrix-subtitle">AUTHENTICATION REQUIRED</div>
+    <!-- Giriş Paneli -->
+    <div class="login-container">
+        <div class="login-box">
+            <div class="ascii-art">
+                <pre>
+ ███▄ ▄███▓ ▄▄▄       ██▀███    ██████  ▄▄▄       ███▄    █ 
+▓██▒▀█▀ ██▒▒████▄    ▓██ ▒ ██▒▒██    ▒ ▒████▄     ██ ▀█   █ 
+▓██    ▓██░▒██  ▀█▄  ▓██ ░▄█ ▒░ ▓██▄   ▒██  ▀█▄  ▓██  ▀█ ██▒
+▒██    ▒██ ░██▄▄▄▄██ ▒██▀▀█▄    ▒   ██▒░██▄▄▄▄██ ▓██▒  ▐▌██▒
+▒██▒   ░██▒ ▓█   ▓██▒░██▓ ▒██▒▒██████▒▒ ▓█   ▓██▒▒██░   ▓██░
+░ ▒░   ░  ░ ▒▒   ▓▒█░░ ▒▓ ░▒▓░▒ ▒▓▒ ▒ ░ ▒▒   ▓▒█░░ ▒░   ▒ ▒ 
+░  ░      ░  ▒   ▒▒ ░  ░▒ ░ ▒░░ ░▒  ░ ░  ▒   ▒▒ ░░ ░░   ░ ▒░
+░      ░     ░   ▒     ░░   ░ ░  ░  ░    ░   ▒      ░   ░ ░ 
+       ░         ░  ░   ░           ░          ░  ░         ░ </pre>
             </div>
-            
-            <canvas id="matrixLoginCanvas" class="matrix-code-rain"></canvas>
-            
-            <div class="login-container">
-                <div class="access-terminal">
-                    <div class="terminal-header">
-                        <div class="terminal-controls">
-                            <span class="control"></span>
-                            <span class="control"></span>
-                            <span class="control"></span>
-                        </div>
-                        <div class="terminal-title">SYSTEM ACCESS</div>
-                    </div>
-                    <div class="terminal-body">
-                        <div class="ascii-logo">
-                            <pre>
- ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄        ▄ 
-▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░▌      ▐░▌
-▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀▀▌▐░█▀▀▀▀▀▀▀█░▌▐░▌░▌     ▐░▌
-▐░▌       ▐░▌▐░▌       ▐░▌▐░▌       ▐░▌▐░▌         ▐░▌       ▐░▌▐░▌▐░▌    ▐░▌
-▐░█▄▄▄▄▄▄▄█░▌▐░█▄▄▄▄▄▄▄█░▌▐░█▄▄▄▄▄▄▄█░▌▐░█▄▄▄▄▄▄▄▄▌▐░█▄▄▄▄▄▄▄█░▌▐░▌ ▐░▌   ▐░▌
-▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░▌  ▐░▌  ▐░▌
-▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀█░█▀▀ ▐░█▀▀▀▀▀▀▀▀▌▐░█▀▀▀▀▀▀▀█░▌▐░▌   ▐░▌ ▐░▌
-▐░▌       ▐░▌▐░▌       ▐░▌▐░▌     ▐░▌  ▐░▌         ▐░▌       ▐░▌▐░▌    ▐░▌▐░▌
-▐░▌       ▐░▌▐░▌       ▐░▌▐░▌      ▐░▌ ▐░█▄▄▄▄▄▄▄▄▌▐░▌       ▐░▌▐░▌     ▐░▐░▌
-▐░▌       ▐░▌▐░▌       ▐░▌▐░▌       ▐░▌▐░░░░░░░░░░░▌▐░▌       ▐░▌▐░▌      ▐░░▌
- ▀         ▀  ▀         ▀  ▀         ▀  ▀▀▀▀▀▀▀▀▀▀▀  ▀         ▀  ▀        ▀▀ 
-                            </pre>
-                        </div>
-                        <div class="login-form">
-                            <div class="input-group">
-                                <label>> ENTER ACCESS CODE:</label>
-                                <input type="password" id="accessCode" 
-                                       onkeypress="if(event.key === 'Enter') verifyAccess()"
-                                       autocomplete="off">
-                                <div class="input-line"></div>
-                            </div>
-                            <div class="terminal-output"></div>
-                        </div>
-                    </div>
+            <div class="system-info">
+                <div class="typing-text">TERMINAL v2.0</div>
+                <div class="access-text blink">SECURITY CLEARANCE REQUIRED</div>
+            </div>
+            <div class="login-form">
+                <div class="input-group">
+                    <label class="terminal-label">> ENTER ACCESS CODE:</label>
+                    <input type="password" id="accessCode" autocomplete="off">
                 </div>
+                <div id="accessMessage"></div>
             </div>
         </div>
     </div>
 
-    <!-- Operatör Konsolu -->
-    <div id="mainPanel" class="panel" style="display: none;">
-        <div class="operator-console">
-            <!-- Üst Menü -->
-            <div class="console-header">
-                <div class="console-title">
-                    <i class="fas fa-terminal"></i>
-                    <span>MARSAN OPERATOR CONSOLE</span>
-                </div>
-                <div class="header-buttons">
-                    <button class="console-btn" onclick="showNoteModal()">
-                        <i class="fas fa-plus"></i>
-                        <span>ADD NOTE</span>
-                    </button>
-                    <button class="console-btn" onclick="showUploadModal()">
-                        <i class="fas fa-upload"></i>
-                        <span>UPLOAD FILE</span>
-                    </button>
-                    <button class="logout-btn" onclick="logout()">
-                        <i class="fas fa-power-off"></i>
-                        <span>EXIT</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- İçerik Alanı -->
-            <div class="console-content">
-                <div id="notesGrid" class="grid-container"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Upload File Modal -->
-    <div id="uploadModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-cloud-upload-alt"></i> UPLOAD FILE</h3>
-                <button class="close-btn" onclick="hideModal('uploadModal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="uploadForm" onsubmit="handleFileUpload(event)">
-                    <div class="form-group">
-                        <label>FILE NAME</label>
-                        <input type="text" id="fileName" required>
-                    </div>
-                    <div class="form-group">
-                        <label>FILE</label>
-                        <div class="file-upload-area">
-                            <input type="file" id="fileInput" required>
-                            <div class="upload-icon">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                                <span>DRAG & DROP OR CLICK TO SELECT</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>DESCRIPTION</label>
-                        <textarea id="fileDesc" rows="3"></textarea>
-                    </div>
-                    <div class="progress-bar" id="uploadProgress" style="display: none;">
-                        <div class="progress"></div>
-                    </div>
-                    <button type="submit" class="submit-btn">
-                        <i class="fas fa-upload"></i>
-                        <span>UPLOAD</span>
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Not Ekleme Modalı -->
-    <div id="noteModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>ADD NEW NOTE</h3>
-                <button class="close-btn" onclick="hideModal('noteModal')">×</button>
-            </div>
-            <div class="modal-body">
-                <form id="noteForm" onsubmit="handleNoteAdd(event)">
-                    <input type="text" id="noteTitle" placeholder="Note Title" required>
-                    <textarea id="noteContent" placeholder="Note Content" required></textarea>
-                    <button type="submit">SAVE NOTE</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <script src="matrix.js"></script>
-    <script src="script.js"></script>
+    <script src="login.js"></script>
 </body>
 </html>
