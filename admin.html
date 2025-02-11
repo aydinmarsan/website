@@ -47,10 +47,13 @@
             <div class="pip-main">
                 <!-- Notes Tab -->
                 <div class="pip-tab-content active" id="notes-content">
+                    <div class="notes-header">
+                        <h2 class="section-title">NOTES</h2>
+                        <button class="pip-btn add-btn" id="addNoteBtn">
+                            <i class="fas fa-plus"></i> NEW NOTE
+                        </button>
+                    </div>
                     <div class="notes-list" id="notesList"></div>
-                    <button class="pip-btn add-btn" id="addNoteBtn">
-                        <i class="fas fa-plus"></i> NEW NOTE
-                    </button>
                 </div>
 
                 <!-- Files Tab -->
@@ -104,6 +107,33 @@
                 <button class="pip-btn save-btn" id="saveNoteBtn">SAVE</button>
                 <button class="pip-btn cancel-btn" id="cancelNoteBtn">CANCEL</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Stored Data Panel -->
+    <div class="stored-data-panel" id="storedDataPanel">
+        <div class="panel-header">
+            <h2 class="panel-title">
+                <i class="fas fa-database"></i>
+                STORED DATA
+            </h2>
+            <button class="close-panel" id="closePanel">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="panel-tabs">
+            <button class="panel-tab active" data-section="notes">
+                <i class="fas fa-book"></i>
+                NOTES
+            </button>
+            <button class="panel-tab" data-section="files">
+                <i class="fas fa-file"></i>
+                FILES
+            </button>
+        </div>
+        <div class="panel-content">
+            <div class="panel-section active" id="storedNotes"></div>
+            <div class="panel-section" id="storedFiles"></div>
         </div>
     </div>
 
