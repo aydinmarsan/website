@@ -67,6 +67,15 @@ class PipTerminal {
                 uploadArea.style.display = 'none';
             }
         });
+
+        // Terminal sekmesi için event listener ekle
+        document.querySelector('[data-tab="terminal"]').addEventListener('click', () => {
+            // Terminal içeriğini en alta kaydır
+            const output = document.getElementById('output');
+            setTimeout(() => {
+                output.scrollTop = output.scrollHeight;
+            }, 100);
+        });
     }
 
     updateClock() {
@@ -678,44 +687,55 @@ class PipTerminal {
         }
     }
 
-    printLine(text, type = '') {
+    printLine(text, type = '', replace = false, timestamp = new Date()) {
         const output = document.getElementById('output');
-        if (output) {
-            const line = document.createElement('div');
-            line.className = `output-line ${type}`;
-            
-            const now = new Date();
-            const time = now.toLocaleTimeString('tr-TR', { 
-                hour12: false,
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
+        
+        if (replace && output.lastChild) {
+            output.lastChild.remove();
+        }
 
-            // Log formatını oluştur
-            let logText = `[${time}] `;
-            if (type && type !== 'muted') {
-                logText += `[${type.toUpperCase()}] `;
-            }
-            logText += text;
+        const line = document.createElement('div');
+        line.className = `output-line ${type}`;
+        
+        // Zaman damgası
+        const time = timestamp.toLocaleTimeString('tr-TR', { 
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
 
-            line.textContent = logText;
+        // Log formatını oluştur
+        let logText = `[${time}] `;
+        if (type && type !== 'muted') {
+            logText += `[${type.toUpperCase()}] `;
+        }
+        logText += text;
 
-            // Özel stiller
-            if (type === 'error') {
-                line.style.color = '#ff3333';
-            } else if (type === 'success') {
-                line.style.color = '#33ff33';
-            } else if (type === 'info') {
-                line.style.color = '#3399ff';
-            } else if (type === 'muted') {
-                line.style.opacity = '0.7';
-            }
+        line.textContent = logText;
 
-            output.appendChild(line);
-            output.scrollTop = output.scrollHeight;
+        // Özel stiller
+        if (type === 'error') {
+            line.style.color = '#ff3333';
+        } else if (type === 'success') {
+            line.style.color = '#33ff33';
+        } else if (type === 'info') {
+            line.style.color = '#3399ff';
+        } else if (type === 'muted') {
+            line.style.opacity = '0.7';
+        } else if (type === 'help') {
+            line.style.color = '#ffff33';
+        } else if (type === 'scan') {
+            line.style.color = '#00ffff';
+        } else if (type === 'system') {
+            line.style.color = '#ff9933';
+        }
 
-            // Firebase'e kaydet
+        output.appendChild(line);
+        output.scrollTop = output.scrollHeight;
+
+        // Firebase'e kaydet
+        if (!replace) {
             try {
                 this.logsRef.add({
                     text: text,
@@ -788,11 +808,66 @@ class PipTerminal {
         const input = document.getElementById('terminalInput');
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                const command = input.value;
+                const command = input.value.trim();
                 input.value = '';
                 this.executeCommand(command);
             }
         });
+
+        // Otomatik tamamlama için geçmiş komutları tut
+        this.commandHistory = [];
+        this.historyIndex = -1;
+
+        // Yukarı/aşağı ok tuşları için event listener
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                this.navigateHistory('up');
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                this.navigateHistory('down');
+            }
+        });
+
+        // Başlangıç mesajını göster
+        this.printSystemInfo();
+    }
+
+    // Sistem bilgilerini göster
+    async printSystemInfo() {
+        const systemInfo = [
+            '╔════════════════════════════════════════╗',
+            '║         QUANTUM TERMINAL v3.1.0        ║',
+            '╚════════════════════════════════════════╝',
+            '',
+            '[SYSTEM] Initializing quantum circuits...',
+            '[SYSTEM] Establishing secure connection...',
+            '[SYSTEM] Quantum encryption activated...',
+            '[SYSTEM] Neural firewall online...',
+            '',
+            'Type "help" for available commands.',
+            '----------------------------------------'
+        ];
+
+        for (const line of systemInfo) {
+            await this.typeWriterEffect(line);
+        }
+    }
+
+    // Typewriter efekti
+    async typeWriterEffect(text, speed = 30) {
+        const chars = text.split('');
+        let output = '';
+        
+        for (const char of chars) {
+            output += char;
+            this.printLine(output, 'system', true);
+            await new Promise(resolve => setTimeout(resolve, speed));
+        }
+        
+        // Son satırı sil ve tam metni yazdır
+        this.output.lastChild.remove();
+        this.printLine(text, 'system');
     }
 
     // Log kayıtlarını yükle
@@ -814,22 +889,24 @@ class PipTerminal {
 
             // Logları ekrana yazdır
             logs.forEach(log => {
-                const line = document.createElement('div');
-                line.className = `output-line ${log.type}`;
-                line.textContent = `[${new Date(log.timestamp?.toDate()).toLocaleTimeString('tr-TR', { hour12: false })}] ${log.type ? `[${log.type.toUpperCase()}] ` : ''}${log.text}`;
-                output.appendChild(line);
+                this.printLine(log.text, log.type, false, log.timestamp?.toDate());
             });
 
             // En alta kaydır
             output.scrollTop = output.scrollHeight;
         } catch (error) {
             console.error('Error loading logs:', error);
+            this.printLine('Error loading logs: ' + error.message, 'error');
         }
     }
 
     // Terminal komutlarını işle
     async executeCommand(command) {
         if (!command.trim()) return;
+
+        // Komutu geçmişe ekle
+        this.commandHistory.unshift(command);
+        this.historyIndex = -1;
 
         // Komutu loglara ekle
         await this.printLine(`> ${command}`, 'command');
@@ -845,16 +922,7 @@ class PipTerminal {
                     break;
 
                 case 'help':
-                    this.printLine('Available commands:', 'info');
-                    this.printLine('clear          - Clear terminal screen', 'info');
-                    this.printLine('help           - Show this help message', 'info');
-                    this.printLine('time           - Show current time', 'info');
-                    this.printLine('echo [text]    - Print text to terminal', 'info');
-                    this.printLine('calc [expr]    - Calculate mathematical expression', 'info');
-                    this.printLine('js [code]      - Execute JavaScript code', 'info');
-                    this.printLine('color [name]   - Change terminal text color', 'info');
-                    this.printLine('history        - Show command history', 'info');
-                    this.printLine('stats          - Show system statistics', 'info');
+                    this.showHelp();
                     break;
 
                 case 'time':
@@ -868,65 +936,19 @@ class PipTerminal {
                     break;
 
                 case 'calc':
-                    const expr = args.slice(1).join(' ');
-                    try {
-                        // Güvenli hesaplama için Function yerine math.js gibi bir kütüphane kullanılabilir
-                        const result = new Function('return ' + expr)();
-                        this.printLine(`${expr} = ${result}`, 'success');
-                    } catch (error) {
-                        this.printLine('Invalid expression', 'error');
-                    }
-                    break;
-
-                case 'js':
-                    const code = args.slice(1).join(' ');
-                    try {
-                        const result = eval(code); // Not: Gerçek uygulamada eval kullanımı güvenlik riski oluşturabilir
-                        this.printLine('Result: ' + result, 'success');
-                    } catch (error) {
-                        this.printLine('Error: ' + error.message, 'error');
-                    }
-                    break;
-
-                case 'color':
-                    const color = args[1]?.toLowerCase();
-                    const validColors = ['green', 'red', 'blue', 'yellow', 'white', 'cyan', 'magenta'];
-                    if (validColors.includes(color)) {
-                        document.getElementById('output').style.color = color;
-                        this.printLine(`Terminal color changed to ${color}`, 'success');
-                    } else {
-                        this.printLine(`Valid colors: ${validColors.join(', ')}`, 'error');
-                    }
-                    break;
-
-                case 'history':
-                    const history = await this.logsRef
-                        .where('type', '==', 'command')
-                        .orderBy('timestamp', 'desc')
-                        .limit(10)
-                        .get();
-
-                    this.printLine('Command history:', 'info');
-                    history.forEach(doc => {
-                        const data = doc.data();
-                        this.printLine(`${new Date(data.timestamp?.toDate()).toLocaleTimeString('tr-TR')} - ${data.text}`, 'muted');
-                    });
+                    this.handleCalc(args.slice(1).join(' '));
                     break;
 
                 case 'stats':
-                    const stats = {
-                        browser: navigator.userAgent,
-                        platform: navigator.platform,
-                        language: navigator.language,
-                        online: navigator.onLine ? 'Yes' : 'No',
-                        memory: performance?.memory?.usedJSHeapSize ? 
-                            this.formatFileSize(performance.memory.usedJSHeapSize) : 'N/A'
-                    };
+                    await this.showSystemStats();
+                    break;
 
-                    this.printLine('System Statistics:', 'info');
-                    Object.entries(stats).forEach(([key, value]) => {
-                        this.printLine(`${key.padEnd(12)}: ${value}`, 'muted');
-                    });
+                case 'matrix':
+                    this.startMatrixEffect();
+                    break;
+
+                case 'scan':
+                    await this.simulateSystemScan();
                     break;
 
                 default:
@@ -935,6 +957,115 @@ class PipTerminal {
         } catch (error) {
             this.printLine(`Error executing command: ${error.message}`, 'error');
         }
+    }
+
+    // Komut geçmişinde gezinme
+    navigateHistory(direction) {
+        if (this.commandHistory.length === 0) return;
+
+        if (direction === 'up') {
+            this.historyIndex = Math.min(this.historyIndex + 1, this.commandHistory.length - 1);
+        } else {
+            this.historyIndex = Math.max(this.historyIndex - 1, -1);
+        }
+
+        const input = document.getElementById('terminalInput');
+        input.value = this.historyIndex === -1 ? '' : this.commandHistory[this.historyIndex];
+        
+        // İmleci sona taşı
+        setTimeout(() => {
+            input.selectionStart = input.selectionEnd = input.value.length;
+        }, 0);
+    }
+
+    // Yardım menüsü
+    showHelp() {
+        const commands = [
+            '╔══════════════════════════════════════════════╗',
+            '║              AVAILABLE COMMANDS              ║',
+            '╚══════════════════════════════════════════════╝',
+            '',
+            'clear    - Clear terminal screen',
+            'help     - Show this help message',
+            'time     - Show current time',
+            'echo     - Print text to terminal',
+            'calc     - Calculate mathematical expression',
+            'stats    - Show system statistics',
+            'matrix   - Start Matrix rain effect',
+            'scan     - Perform system scan',
+            '',
+            'Use arrow keys ↑↓ to navigate command history'
+        ];
+
+        commands.forEach(cmd => this.printLine(cmd, 'help'));
+    }
+
+    // Hesap makinesi
+    handleCalc(expression) {
+        try {
+            // Güvenli hesaplama için Function yerine math.js gibi bir kütüphane kullanılabilir
+            const result = new Function('return ' + expression)();
+            this.printLine(`${expression} = ${result}`, 'success');
+        } catch (error) {
+            this.printLine('Invalid expression', 'error');
+        }
+    }
+
+    // Sistem istatistikleri
+    async showSystemStats() {
+        const stats = [
+            '╔══════════════════════════════════════════════╗',
+            '║              SYSTEM STATISTICS               ║',
+            '╚══════════════════════════════════════════════╝',
+            '',
+            `OS: ${navigator.platform}`,
+            `Browser: ${navigator.userAgent.split(') ')[0]})`,
+            `Memory: ${performance?.memory?.usedJSHeapSize ? this.formatBytes(performance.memory.usedJSHeapSize) : 'N/A'}`,
+            `Network: ${navigator.onLine ? 'Online' : 'Offline'}`,
+            `Resolution: ${window.screen.width}x${window.screen.height}`,
+            `Time Zone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`,
+            `Language: ${navigator.language}`,
+            '',
+            'Connection Status: ' + (navigator.onLine ? '[ACTIVE]' : '[INACTIVE]')
+        ];
+
+        for (const stat of stats) {
+            await this.typeWriterEffect(stat, 20);
+        }
+    }
+
+    // Matrix efekti
+    startMatrixEffect() {
+        this.printLine('Initializing Matrix rain effect...', 'success');
+        // Matrix efekti başlatma kodu buraya gelecek
+    }
+
+    // Sistem taraması simülasyonu
+    async simulateSystemScan() {
+        const scanSteps = [
+            { text: 'Initializing system scan...', delay: 1000 },
+            { text: 'Checking quantum circuits...', delay: 800 },
+            { text: 'Analyzing neural pathways...', delay: 1200 },
+            { text: 'Scanning for anomalies...', delay: 1500 },
+            { text: 'Verifying system integrity...', delay: 1000 },
+            { text: 'Optimizing quantum gates...', delay: 900 },
+            { text: 'Finalizing scan results...', delay: 700 }
+        ];
+
+        for (const step of scanSteps) {
+            this.printLine(step.text, 'scan');
+            await new Promise(resolve => setTimeout(resolve, step.delay));
+        }
+
+        this.printLine('System scan complete. All systems nominal.', 'success');
+    }
+
+    // Boyut formatla
+    formatBytes(bytes) {
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        if (bytes === 0) return '0 Byte';
+        const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+        return Math.round(bytes / Math.pow(1024, i)) + ' ' + sizes[i];
     }
 
     // Links Management
@@ -1091,6 +1222,9 @@ class PipTerminal {
 
     // Geri dönüşüm kutusu yönetimi
     async initializeTrash() {
+        // Çöp kutusunu yükle
+        await this.refreshTrash();
+
         // Empty Trash butonu
         document.getElementById('emptyTrashBtn').addEventListener('click', async () => {
             const confirmed = await this.showConfirmModal('Are you sure you want to permanently delete all items in trash?');
@@ -1103,36 +1237,13 @@ class PipTerminal {
         this.checkTrashExpiry();
     }
 
-    // Öğeyi çöp kutusuna taşı
-    async moveToTrash(item) {
-        try {
-            const trashData = {
-                ...item,
-                deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                originalCollection: 'notes',
-                status: 'trash'
-            };
-
-            // Çöp kutusuna ekle
-            await db.collection('trash').add(trashData);
-            
-            // Orijinal öğeyi sil
-            await db.collection('notes').doc(item.id).delete();
-            
-            this.printLine(`${item.title || 'Item'} moved to trash`, 'info');
-            await this.refreshTrash();
-        } catch (error) {
-            console.error('Error moving to trash:', error);
-            this.printLine(`Error moving to trash: ${error.message}`, 'error');
-        }
-    }
-
     // Çöp kutusunu yenile
     async refreshTrash() {
         const trashList = document.getElementById('trashList');
         trashList.innerHTML = '<div class="loading">Loading trash items...</div>';
         
         try {
+            // Firestore'dan çöp kutusu verilerini al
             const snapshot = await db.collection('trash')
                 .orderBy('deletedAt', 'desc')
                 .get();
@@ -1167,27 +1278,14 @@ class PipTerminal {
                         ${this.getItemPreview(data)}
                     </div>
                     <div class="item-actions">
-                        <button class="note-btn restore">
+                        <button class="note-btn restore" onclick="restoreFromTrash('${doc.id}')">
                             <i class="fas fa-undo"></i> RESTORE
                         </button>
-                        <button class="note-btn delete">
+                        <button class="note-btn delete" onclick="permanentlyDelete('${doc.id}')">
                             <i class="fas fa-trash"></i> DELETE PERMANENTLY
                         </button>
                     </div>
                 `;
-
-                // Restore butonu
-                itemBox.querySelector('.restore').addEventListener('click', async () => {
-                    await this.restoreFromTrash(doc.id, data);
-                });
-
-                // Delete butonu
-                itemBox.querySelector('.delete').addEventListener('click', async () => {
-                    const confirmed = await this.showConfirmModal('This item will be permanently deleted. Continue?');
-                    if (confirmed) {
-                        await this.permanentlyDelete(doc.id, data);
-                    }
-                });
 
                 trashList.appendChild(itemBox);
             });
@@ -1197,9 +1295,44 @@ class PipTerminal {
         }
     }
 
-    // Çöp kutusundan geri yükle
-    async restoreFromTrash(trashId, data) {
+    // Öğeyi çöp kutusuna taşı
+    async moveToTrash(item) {
         try {
+            // Öğenin silinme tarihini ekle
+            const trashData = {
+                ...item,
+                deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                originalCollection: 'notes',
+                status: 'trash'
+            };
+
+            // Çöp kutusuna ekle
+            await db.collection('trash').add(trashData);
+            
+            // Orijinal öğeyi sil
+            if (item.id) {
+                await db.collection('notes').doc(item.id).delete();
+            }
+            
+            this.printLine(`${item.title || 'Item'} moved to trash`, 'info');
+            await this.refreshTrash();
+        } catch (error) {
+            console.error('Error moving to trash:', error);
+            this.printLine(`Error moving to trash: ${error.message}`, 'error');
+        }
+    }
+
+    // Çöp kutusundan geri yükle
+    async restoreFromTrash(trashId) {
+        try {
+            // Çöp kutusundan öğeyi al
+            const doc = await db.collection('trash').doc(trashId).get();
+            if (!doc.exists) {
+                throw new Error('Item not found in trash');
+            }
+
+            const data = doc.data();
+            
             // Orijinal koleksiyona geri yükle
             const { status, deletedAt, originalCollection, ...restoreData } = data;
             await db.collection(originalCollection).add(restoreData);
@@ -1582,6 +1715,145 @@ class PipTerminal {
 
         return text;
     }
+
+    // Terminal input yönetimi
+    initializeTerminalInput() {
+        const input = document.getElementById('terminalInput');
+        const commands = [
+            { cmd: 'help', desc: 'Show available commands' },
+            { cmd: 'clear', desc: 'Clear terminal screen' },
+            { cmd: 'time', desc: 'Show current time' },
+            { cmd: 'stats', desc: 'Show system statistics' },
+            { cmd: 'matrix', desc: 'Start Matrix rain effect' },
+            { cmd: 'scan', desc: 'Perform system scan' },
+            { cmd: 'exit', desc: 'Exit terminal' }
+        ];
+
+        let currentSuggestions = [];
+        let selectedIndex = -1;
+
+        // Otomatik tamamlama container'ı
+        const suggestionsContainer = document.createElement('div');
+        suggestionsContainer.className = 'autocomplete-suggestions';
+        input.parentElement.appendChild(suggestionsContainer);
+
+        // Input değişikliklerini dinle
+        input.addEventListener('input', () => {
+            const value = input.value.toLowerCase();
+            if (value.length > 0) {
+                currentSuggestions = commands.filter(cmd => 
+                    cmd.cmd.startsWith(value)
+                );
+                showSuggestions(currentSuggestions);
+            } else {
+                hideSuggestions();
+            }
+            selectedIndex = -1;
+        });
+
+        // Klavye olaylarını dinle
+        input.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowUp':
+                    e.preventDefault();
+                    navigateSuggestions('up');
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    navigateSuggestions('down');
+                    break;
+                case 'Tab':
+                    e.preventDefault();
+                    if (currentSuggestions.length > 0) {
+                        if (selectedIndex === -1) selectedIndex = 0;
+                        selectSuggestion(selectedIndex);
+                    }
+                    break;
+                case 'Enter':
+                    hideSuggestions();
+                    break;
+                case 'Escape':
+                    hideSuggestions();
+                    break;
+            }
+        });
+
+        // Önerileri göster
+        function showSuggestions(suggestions) {
+            if (suggestions.length === 0) {
+                hideSuggestions();
+                return;
+            }
+
+            suggestionsContainer.innerHTML = suggestions.map(cmd => `
+                <div class="autocomplete-suggestion">
+                    <i class="fas fa-terminal"></i>
+                    <span>${cmd.cmd}</span>
+                    <span style="opacity: 0.5"> - ${cmd.desc}</span>
+                </div>
+            `).join('');
+
+            suggestionsContainer.style.display = 'block';
+
+            // Önerilere tıklama olayları ekle
+            suggestionsContainer.querySelectorAll('.autocomplete-suggestion').forEach((el, idx) => {
+                el.addEventListener('click', () => {
+                    selectSuggestion(idx);
+                    input.focus();
+                });
+
+                el.addEventListener('mouseover', () => {
+                    selectedIndex = idx;
+                    updateSelectedSuggestion();
+                });
+            });
+        }
+
+        // Önerileri gizle
+        function hideSuggestions() {
+            suggestionsContainer.style.display = 'none';
+            currentSuggestions = [];
+        }
+
+        // Öneriler arasında gezinme
+        function navigateSuggestions(direction) {
+            if (currentSuggestions.length === 0) return;
+
+            if (direction === 'up') {
+                selectedIndex = selectedIndex <= 0 ? currentSuggestions.length - 1 : selectedIndex - 1;
+            } else {
+                selectedIndex = selectedIndex >= currentSuggestions.length - 1 ? 0 : selectedIndex + 1;
+            }
+
+            updateSelectedSuggestion();
+        }
+
+        // Seçili öneriyi güncelle
+        function updateSelectedSuggestion() {
+            const suggestions = suggestionsContainer.querySelectorAll('.autocomplete-suggestion');
+            suggestions.forEach((el, idx) => {
+                el.classList.toggle('selected', idx === selectedIndex);
+            });
+        }
+
+        // Öneri seç
+        function selectSuggestion(index) {
+            input.value = currentSuggestions[index].cmd;
+            hideSuggestions();
+        }
+
+        // Input'a odaklandığında
+        input.addEventListener('focus', () => {
+            input.setAttribute('placeholder', 'Type a command...');
+        });
+
+        // Input'tan çıkıldığında
+        input.addEventListener('blur', () => {
+            input.setAttribute('placeholder', '');
+            // Tıklama olaylarının işlenmesi için timeout ekle
+            setTimeout(hideSuggestions, 200);
+        });
+    }
 }
 
 // Initialize the terminal
@@ -1593,4 +1865,153 @@ document.addEventListener('DOMContentLoaded', () => {
 function logout() {
     localStorage.removeItem('isLoggedIn');
     window.location.href = 'index.html';
+}
+
+// Terminal sekmesi içeriğini yükle
+async function loadTerminalContent() {
+    const output = document.getElementById('output');
+    output.innerHTML = `
+        <div class="terminal-header">
+            <div class="terminal-title">
+                <i class="fas fa-terminal"></i> QUANTUM TERMINAL v3.1.0
+            </div>
+            <div class="terminal-status">
+                <span class="status-item">
+                    <i class="fas fa-signal"></i> CONNECTED
+                </span>
+                <span class="status-item">
+                    <i class="fas fa-shield-alt"></i> SECURE
+                </span>
+                <span class="status-item" id="terminalClock">
+                    <i class="fas fa-clock"></i> 00:00:00
+                </span>
+            </div>
+        </div>
+        <div class="terminal-body">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">INITIALIZING QUANTUM TERMINAL...</div>
+            </div>
+        </div>
+        <div class="terminal-input-container">
+            <span class="prompt">><span class="blink">_</span></span>
+            <input type="text" id="terminalInput" autocomplete="off" spellcheck="false">
+        </div>
+    `;
+
+    // Terminal saatini başlat
+    startTerminalClock();
+
+    try {
+        // Son 50 logu getir
+        const snapshot = await db.collection('terminal_logs')
+            .orderBy('timestamp', 'desc')
+            .limit(50)
+            .get();
+        
+        const terminalBody = output.querySelector('.terminal-body');
+        terminalBody.innerHTML = '';
+        
+        // Logları ters çevir (eskiden yeniye)
+        const logs = [];
+        snapshot.forEach(doc => {
+            logs.unshift(doc.data());
+        });
+        
+        // Başlangıç animasyonu
+        await showBootSequence(terminalBody);
+        
+        // Logları ekrana yazdır
+        logs.forEach(log => {
+            const timestamp = log.timestamp?.toDate().toLocaleTimeString('tr-TR', {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            const line = document.createElement('div');
+            line.className = `output-line ${log.type || ''}`;
+            line.innerHTML = `
+                <span class="timestamp">[${timestamp}]</span>
+                <span class="log-content">${formatLogContent(log.text, log.type)}</span>
+            `;
+            terminalBody.appendChild(line);
+        });
+        
+        // En alta kaydır
+        terminalBody.scrollTop = terminalBody.scrollHeight;
+        
+        // Input'a fokuslan
+        document.getElementById('terminalInput').focus();
+        
+    } catch (error) {
+        console.error('Error loading terminal logs:', error);
+        output.querySelector('.terminal-body').innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                Error loading terminal logs: ${error.message}
+            </div>
+        `;
+    }
+}
+
+// Terminal saati
+function startTerminalClock() {
+    const clockElement = document.getElementById('terminalClock');
+    setInterval(() => {
+        const now = new Date();
+        clockElement.innerHTML = `
+            <i class="fas fa-clock"></i>
+            ${now.toLocaleTimeString('tr-TR', {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            })}
+        `;
+    }, 1000);
+}
+
+// Başlangıç animasyonu
+async function showBootSequence(container) {
+    const bootSequence = [
+        { text: 'INITIALIZING QUANTUM CIRCUITS...', delay: 500 },
+        { text: 'ESTABLISHING SECURE CONNECTION...', delay: 400 },
+        { text: 'LOADING NEURAL NETWORKS...', delay: 600 },
+        { text: 'CALIBRATING QUANTUM GATES...', delay: 300 },
+        { text: 'ACTIVATING NEURAL FIREWALL...', delay: 400 },
+        { text: 'SYSTEM READY.', delay: 500 }
+    ];
+
+    for (const step of bootSequence) {
+        const line = document.createElement('div');
+        line.className = 'boot-line';
+        line.innerHTML = `
+            <span class="boot-icon"><i class="fas fa-microchip"></i></span>
+            <span class="boot-text">${step.text}</span>
+        `;
+        container.appendChild(line);
+        await new Promise(resolve => setTimeout(resolve, step.delay));
+    }
+
+    container.appendChild(document.createElement('hr'));
+}
+
+// Log içeriğini formatla
+function formatLogContent(text, type) {
+    switch (type) {
+        case 'error':
+            return `<span class="error-text"><i class="fas fa-times-circle"></i> ${text}</span>`;
+        case 'success':
+            return `<span class="success-text"><i class="fas fa-check-circle"></i> ${text}</span>`;
+        case 'warning':
+            return `<span class="warning-text"><i class="fas fa-exclamation-triangle"></i> ${text}</span>`;
+        case 'info':
+            return `<span class="info-text"><i class="fas fa-info-circle"></i> ${text}</span>`;
+        case 'command':
+            return `<span class="command-text"><i class="fas fa-terminal"></i> ${text}</span>`;
+        default:
+            return text;
+    }
 } 
