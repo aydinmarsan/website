@@ -3,424 +3,717 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matrix Terminal</title>
+    <title>PIP-OS</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .boot-screen {
+        :root {
+            --pip-green: #2ecc71;
+            --pip-dark: #111;
+            --pip-glow: rgba(46, 204, 113, 0.5);
+            --panel-depth: 80px;
+            --input-depth: 30px;
+            --rotation-factor: 0.8;
+        }
+
+        body {
+            background: #000;
+            margin: 0;
+            font-family: 'Share Tech Mono', monospace;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+
+        .pip-terminal {
             position: fixed;
-            top: 0;
-            left: 0;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) perspective(2000px) rotateX(15deg);
+            width: 90%;
+            max-width: 600px;
+            height: 400px;
+            background: var(--pip-dark);
+            border: 4px solid var(--pip-green);
+            box-shadow: 
+                0 0 50px var(--pip-glow),
+                0 ${var(--panel-depth)} 100px rgba(0, 0, 0, 0.4);
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+            transform-origin: center center;
+            will-change: transform;
+        }
+
+        .screen {
+            position: relative;
             width: 100%;
             height: 100%;
-            background: #000;
-            color: var(--pip-neon);
-            font-family: 'Share Tech Mono', monospace;
-            padding: 20px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
+            background: 
+                linear-gradient(
+                    135deg,
+                    rgba(0, 20, 0, 0.95),
+                    rgba(0, 40, 20, 0.9)
+                );
             overflow: hidden;
+            transform-style: preserve-3d;
         }
 
-        .boot-header {
-            text-align: center;
-            margin-bottom: 30px;
-            opacity: 0;
-            animation: fadeIn 1s forwards;
-        }
-
-        .boot-logo {
-            color: var(--pip-neon);
-            text-shadow: 0 0 10px var(--pip-neon);
-            margin-bottom: 10px;
-            font-size: 0.8rem;
-            white-space: pre;
-        }
-
-        .boot-content {
-            flex: 1;
-            overflow-y: auto;
-            font-size: 14px;
-            line-height: 1.4;
-            padding: 20px;
-            background: rgba(0, 20, 0, 0.3);
-            border: 1px solid var(--pip-neon);
-            box-shadow: inset 0 0 20px rgba(57, 255, 20, 0.2);
-            position: relative;
-        }
-
-        .boot-content::before {
-            content: '';
+        .scanline {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
+            height: 4px;
+            background: rgba(46, 204, 113, 0.2);
+            animation: scan 3s linear infinite;
+        }
+
+        .screen-content {
+            padding: 20px;
+            transform: translateZ(40px);
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease-out;
+        }
+
+        .pip-header {
+            text-align: center;
+            margin-bottom: 30px;
+            transform: translateZ(50px);
+            position: relative;
+        }
+
+        .pip-logo {
+            font-size: 0.55em;
+            color: var(--pip-green);
+            text-shadow: 
+                0 0 10px var(--pip-glow),
+                0 0 20px var(--pip-glow),
+                0 0 40px var(--pip-glow);
+            transform: 
+                translateZ(60px)
+                rotateX(10deg);
+            transform-style: preserve-3d;
+            animation: logoFloat 4s ease-in-out infinite;
+            letter-spacing: 1px;
+            filter: drop-shadow(0 5px 15px var(--pip-glow));
+        }
+
+        .os-version {
+            font-size: 1.2em;
+            color: var(--pip-green);
+            margin-top: 10px;
+            opacity: 0.8;
+            transform: translateZ(40px);
+            text-shadow: 0 0 10px var(--pip-glow);
+            animation: versionPulse 2s infinite;
+        }
+
+        .login-form {
+            transform-style: preserve-3d;
+            perspective: 2000px;
+            position: relative;
+            margin-top: 50px;
+        }
+
+        .input-field {
+            position: relative;
+            transform-style: preserve-3d;
+            margin-bottom: 40px;
+            height: 50px;
+            transition: all 0.3s ease-out;
+        }
+
+        /* Kübik panel yüzeyleri */
+        .input-field::before,
+        .input-field::after {
+            content: '';
+            position: absolute;
+            width: 100%;
             height: 100%;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 2px,
-                rgba(57, 255, 20, 0.05) 3px,
-                transparent 4px
+            background: rgba(0, 20, 0, 0.8);
+            border: 2px solid var(--pip-green);
+        }
+
+        .input-field::before {
+            transform: translateZ(-20px);
+            filter: brightness(0.5);
+        }
+
+        .input-field::after {
+            transform: translateZ(-10px);
+            filter: brightness(0.7);
+        }
+
+        /* Yan yüzeyler */
+        .panel-side {
+            position: absolute;
+            background: rgba(0, 20, 0, 0.9);
+            border: 2px solid var(--pip-green);
+        }
+
+        .panel-left {
+            left: -2px;
+            width: 20px;
+            height: 100%;
+            transform: rotateY(90deg) translateZ(-10px);
+        }
+
+        .panel-right {
+            right: -2px;
+            width: 20px;
+            height: 100%;
+            transform: rotateY(-90deg) translateZ(-10px);
+        }
+
+        .panel-top {
+            top: -2px;
+            width: 100%;
+            height: 20px;
+            transform: rotateX(-90deg) translateZ(-10px);
+        }
+
+        .panel-bottom {
+            bottom: -2px;
+            width: 100%;
+            height: 20px;
+            transform: rotateX(90deg) translateZ(-10px);
+        }
+
+        .input-field input {
+            position: relative;
+            width: calc(100% - 20px);
+            height: 100%;
+            background: rgba(0, 20, 0, 0.5);
+            border: none;
+            color: var(--pip-green);
+            padding: 0 10px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.1em;
+            transform: translateZ(0);
+            transition: all 0.3s ease;
+        }
+
+        /* Hover efektleri */
+        .input-field:hover {
+            transform: translateZ(30px) rotateX(5deg);
+        }
+
+        .input-field:hover input {
+            background: rgba(46, 204, 113, 0.1);
+            box-shadow: 0 0 20px var(--pip-glow);
+        }
+
+        .input-field:hover .panel-side {
+            border-color: rgba(46, 204, 113, 0.8);
+            box-shadow: 0 0 10px var(--pip-glow);
+        }
+
+        .corner {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border: 2px solid var(--pip-green);
+            transform-style: preserve-3d;
+            transition: all 0.3s ease;
+        }
+
+        .corner-tl { transform: translateZ(15px) rotateY(-45deg); }
+        .corner-tr { transform: translateZ(15px) rotateY(45deg); }
+        .corner-bl { transform: translateZ(15px) rotateY(45deg); }
+        .corner-br { transform: translateZ(15px) rotateY(-45deg); }
+
+        .input-field:hover .corner {
+            transform: translateZ(25px) scale(1.2);
+            border-color: #fff;
+            box-shadow: 0 0 15px var(--pip-glow);
+        }
+
+        .status-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            color: var(--pip-green);
+            font-size: 0.8em;
+            transform: translateZ(20px);
+            transform-style: preserve-3d;
+            background: rgba(0, 20, 0, 0.8);
+            border-top: 1px solid var(--pip-green);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transform-style: preserve-3d;
+            transition: all 0.3s ease;
+        }
+
+        .status-item:hover {
+            transform: translateZ(30px) scale(1.1);
+            text-shadow: 0 0 15px var(--pip-glow);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--pip-green);
+            animation: blink 1s infinite;
+            transform: translateZ(5px);
+            box-shadow: 0 0 10px var(--pip-glow);
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(400px); }
+        }
+
+        @keyframes logoFloat {
+            0%, 100% {
+                transform: 
+                    translateZ(60px)
+                    rotateX(10deg);
+            }
+            50% {
+                transform: 
+                    translateZ(80px)
+                    rotateX(15deg);
+            }
+        }
+
+        @keyframes versionPulse {
+            0%, 100% {
+                opacity: 0.8;
+                transform: translateZ(40px);
+            }
+            50% {
+                opacity: 1;
+                transform: translateZ(50px);
+            }
+        }
+
+        .screen-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(0, 0, 0, 0.1),
+                    rgba(0, 0, 0, 0.1) 1px,
+                    transparent 1px,
+                    transparent 2px
+                );
+            pointer-events: none;
+        }
+
+        .screen-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(
+                circle at center,
+                transparent 50%,
+                rgba(0, 0, 0, 0.5) 100%
             );
             pointer-events: none;
         }
 
-        .boot-line {
-            margin: 4px 0;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            opacity: 0;
-            transform: translateY(10px);
-            animation: lineAppear 0.3s forwards;
-        }
-
-        .boot-line.error {
-            color: var(--pip-magenta);
-        }
-
-        .boot-line.warning {
-            color: var(--pip-yellow);
-        }
-
-        .boot-line.success {
-            color: var(--pip-cyan);
-        }
-
-        .boot-timestamp {
-            min-width: 100px;
-            color: var(--pip-cyan);
-            font-size: 0.8rem;
-            opacity: 0.7;
-        }
-
-        .boot-progress {
-            margin-top: 20px;
-            padding: 20px;
-            background: rgba(0, 20, 0, 0.5);
-            border: 1px solid var(--pip-neon);
-            border-radius: 4px;
-        }
-
-        .progress-bar {
-            height: 2px;
-            background: rgba(57, 255, 20, 0.2);
-            margin: 10px 0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            width: 0%;
-            background: var(--pip-neon);
-            box-shadow: 0 0 10px var(--pip-neon);
-            transition: width 0.3s ease;
-            position: relative;
-        }
-
-        .progress-fill::after {
+        /* 3D Işık Efekti */
+        .screen::before {
             content: '';
             position: absolute;
-            top: 0;
-            right: 0;
-            width: 10px;
-            height: 100%;
-            background: var(--pip-neon);
-            box-shadow: 0 0 10px var(--pip-neon);
+            inset: -2px;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(46, 204, 113, 0.2),
+                transparent
+            );
+            transform: translateZ(30px);
+            pointer-events: none;
+            filter: blur(2px);
         }
 
-        .boot-status {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 10px;
-            font-size: 0.9rem;
+        .screen::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(
+                circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+                rgba(46, 204, 113, 0.2),
+                transparent 70%
+            );
+            transform: translateZ(40px);
+            pointer-events: none;
+            mix-blend-mode: screen;
         }
 
-        .status-text {
-            color: var(--pip-neon);
-        }
-
-        .status-details {
-            display: flex;
-            gap: 20px;
-            font-size: 0.8rem;
-            color: var(--pip-cyan);
-        }
-
-        .system-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .info-item {
-            padding: 10px;
-            background: rgba(0, 20, 0, 0.4);
-            border: 1px solid var(--pip-neon);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .info-label {
-            color: var(--pip-cyan);
-            font-size: 0.8rem;
-        }
-
-        .info-value {
-            color: var(--pip-neon);
-            font-size: 0.9rem;
-            text-shadow: 0 0 5px var(--pip-neon);
-        }
-
-        @keyframes lineAppear {
-            to {
-                opacity: 1;
-                transform: translateY(0);
+        /* Animasyonlar */
+        @keyframes float {
+            0%, 100% {
+                transform: translateZ(var(--panel-depth)) translateY(0);
+            }
+            50% {
+                transform: translateZ(calc(var(--panel-depth) + 30px)) translateY(-10px);
             }
         }
 
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 30px var(--pip-glow);
+            }
+            50% {
+                box-shadow: 0 0 50px var(--pip-glow);
             }
         }
 
-        @keyframes glitch {
-            0% { transform: translate(0); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(2px, -2px); }
-            60% { transform: translate(-2px, -2px); }
-            80% { transform: translate(2px, 2px); }
-            100% { transform: translate(0); }
+        @keyframes shake {
+            0%, 100% { transform: translateZ(var(--panel-depth)) rotateX(0); }
+            25% { transform: translateZ(var(--panel-depth)) rotateX(-5deg) rotateY(-5deg); }
+            75% { transform: translateZ(var(--panel-depth)) rotateX(5deg) rotateY(5deg); }
+        }
+
+        @keyframes success {
+            0% { transform: translateZ(var(--panel-depth)) scale3d(1, 1, 1); }
+            50% { transform: translateZ(calc(var(--panel-depth) + 50px)) scale3d(1.1, 1.1, 1.1); }
+            100% { transform: translateZ(var(--panel-depth)) scale3d(1, 1, 1); }
+        }
+
+        @keyframes success-animation {
+            0% {
+                transform: translate(-50%, -50%) perspective(2000px) rotateX(10deg) rotateY(0deg) translateZ(80px);
+                filter: brightness(1);
+            }
+            40% {
+                transform: translate(-50%, -50%) perspective(2000px) rotateX(0deg) rotateY(0deg) translateZ(150px) scale(1.1);
+                filter: brightness(1.5);
+            }
+            100% {
+                transform: translate(-50%, -50%) perspective(2000px) rotateX(0deg) rotateY(360deg) translateZ(1000px) scale(0);
+                filter: brightness(2);
+            }
+        }
+
+        @keyframes success-glow {
+            0% { box-shadow: 0 0 30px var(--pip-glow); }
+            40% { box-shadow: 0 0 100px var(--pip-green); }
+            100% { box-shadow: 0 0 200px var(--pip-green); }
+        }
+
+        @keyframes text-success {
+            0% { text-shadow: 0 0 10px var(--pip-glow); }
+            40% { text-shadow: 0 0 30px var(--pip-green); }
+            100% { text-shadow: 0 0 50px var(--pip-green); }
         }
     </style>
 </head>
 <body>
-    <!-- Boot Screen -->
-    <div class="boot-screen" id="bootScreen">
-        <div class="boot-header">
-            <pre class="boot-logo">
- ██████╗ ██╗   ██╗ █████╗ ███╗   ██╗████████╗██╗   ██╗███╗   ███╗
-██╔═══██╗██║   ██║██╔══██╗████╗  ██║╚══██╔══╝██║   ██║████╗ ████║
-██║   ██║██║   ██║███████║██╔██╗ ██║   ██║   ██║   ██║██╔████╔██║
-██║▄▄ ██║██║   ██║██╔══██║██║╚██╗██║   ██║   ██║   ██║██║╚██╔╝██║
-╚██████╔╝╚██████╔╝██║  ██║██║ ╚████║   ██║   ╚██████╔╝██║ ╚═╝ ██║
- ╚══▀▀═╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝</pre>
-            <div class="boot-version">QUANTUM OS v3.0.1</div>
-        </div>
-        
-        <div class="boot-content" id="bootContent"></div>
-        
-        <div class="boot-progress">
-            <div class="progress-bar">
-                <div class="boot-progress-bar" id="bootProgress"></div>
-            </div>
-            <div class="boot-status">
-                <div class="status-text" id="bootStatus">Initializing system...</div>
-                <div class="status-details">
-                    <span id="bootMemory">RAM: 0 MB</span>
-                    <span id="bootCPU">CPU: 0%</span>
-                    <span id="bootTime">Time: 00:00:00</span>
+    <div class="pip-terminal">
+        <div class="screen">
+            <div class="scanline"></div>
+            <div class="screen-content">
+                <div class="pip-header">
+                    <pre class="pip-logo">
+███╗   ███╗ █████╗ ██████╗ ███████╗ █████╗ ███╗   ██╗
+████╗ ████║██╔══██╗██╔══██╗██╔════╝██╔══██╗████╗  ██║
+██╔████╔██║███████║██████╔╝███████╗███████║██╔██╗ ██║
+██║╚██╔╝██║██╔══██║██╔══██╗╚════██║██╔══██║██║╚██╗██║
+██║ ╚═╝ ██║██║  ██║██║  ██║███████║██║  ██║██║ ╚████║
+╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝
+</pre>
+                    <div class="os-version">TERMINAL OS v1.0</div>
+                </div>
+                <div class="login-form">
+                    <div class="input-field">
+                        <div class="panel-side panel-left"></div>
+                        <div class="panel-side panel-right"></div>
+                        <div class="panel-side panel-top"></div>
+                        <div class="panel-side panel-bottom"></div>
+                        <input type="text" id="userId" placeholder="ENTER USER-ID">
+                    </div>
+                    <div class="input-field">
+                        <div class="panel-side panel-left"></div>
+                        <div class="panel-side panel-right"></div>
+                        <div class="panel-side panel-top"></div>
+                        <div class="panel-side panel-bottom"></div>
+                        <input type="password" id="accessCode" placeholder="ENTER ACCESS CODE">
+                    </div>
                 </div>
             </div>
-            <div class="system-info">
-                <div class="info-item">
-                    <span class="info-label">KERNEL</span>
-                    <span class="info-value">QOS 3.0.1</span>
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="status-dot"></div>
+                    SYSTEM READY
                 </div>
-                <div class="info-item">
-                    <span class="info-label">ARCHITECTURE</span>
-                    <span class="info-value">QUANTUM-X64</span>
+                <div class="status-item">
+                    <div class="status-dot"></div>
+                    SECURE CONNECTION
                 </div>
-                <div class="info-item">
-                    <span class="info-label">SECURITY</span>
-                    <span class="info-value">LEVEL ALPHA</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">ENCRYPTION</span>
-                    <span class="info-value">QUANTUM-256</span>
+                <div class="status-item">
+                    <div class="status-dot"></div>
+                    STANDBY
                 </div>
             </div>
+            <div class="screen-overlay"></div>
+            <div class="screen-glow"></div>
         </div>
     </div>
 
-    <!-- Matrix Arka Plan -->
-    <canvas id="matrix"></canvas>
-
-    <!-- Giriş Paneli -->
-    <div class="login-container">
-        <div class="login-box">
-            <div class="ascii-art">
-                <pre>
-  ███▄ ▄███▓ ▄▄▄       ██▀███    ██████  ▄▄▄       ███▄    █ 
- ▓██▒▀█▀ ██▒▒████▄    ▓██ ▒ ██▒▒██    ▒ ▒████▄     ██ ▀█   █ 
- ▓██    ▓██░▒██  ▀█▄  ▓██ ░▄█ ▒░ ▓██▄   ▒██  ▀█▄  ▓██  ▀█ ██▒
- ▒██    ▒██ ░██▄▄▄▄██ ▒██▀▀█▄    ▒   ██▒░██▄▄▄▄██ ▓██▒  ▐▌██▒
- ▒██▒   ░██▒ ▓█   ▓██▒░██▓ ▒██▒▒██████▒▒ ▓█   ▓██▒▒██░   ▓██░
- ░ ▒░   ░  ░ ▒▒   ▓▒█░░ ▒▓ ░▒▓░▒ ▒▓▒ ▒ ░ ▒▒   ▓▒█░░ ▒░   ▒ ▒ 
- ░  ░      ░  ▒   ▒▒ ░  ░▒ ░ ▒░░ ░▒  ░ ░  ▒   ▒▒ ░░ ░░   ░ ▒░
- ░      ░     ░   ▒     ░░   ░ ░  ░  ░    ░   ▒      ░   ░ ░ 
-        ░         ░  ░   ░           ░          ░  ░         ░ </pre>
-                </div>
-            <div class="system-info">
-                <div class="typing-text">TERMINAL v3.0</div>
-                <div class="access-text blink">SECURITY CLEARANCE REQUIRED</div>
-            </div>
-            <div class="login-form">
-                <div class="input-container">
-                    <div class="input-header">
-                        <i class="fas fa-lock"></i>
-                        <span class="typing-text">SECURE ACCESS TERMINAL</span>
-                    </div>
-                    <div class="input-group">
-                        <label class="terminal-label">
-                            <i class="fas fa-chevron-right"></i>
-                            ENTER ACCESS CODE:
-                        </label>
-                        <div class="input-wrapper">
-                            <input type="password" 
-                                   id="accessCode" 
-                                   autocomplete="off" 
-                                   spellcheck="false"
-                                   maxlength="16"
-                                   placeholder="****************">
-                            <div class="input-glow"></div>
-                        </div>
-                    </div>
-                    <div id="accessMessage" class="output-line"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="matrix.js"></script>
     <script>
-        // Boot sequence'ı güncelle
-        const bootSequence = [
-            { text: '[INIT] Starting Quantum OS...', delay: 1000, progress: 5, type: 'info' },
-            { text: '[BIOS] Checking quantum circuits...', delay: 800, progress: 10, type: 'info' },
-            { text: '[MEM] Initializing quantum memory banks...', delay: 600, progress: 15, type: 'info' },
-            { text: '[CPU] Quantum processor online...', delay: 400, progress: 20, type: 'success' },
-            { text: '[SYS] Loading kernel modules...', delay: 1000, progress: 30, type: 'info' },
-            { text: '[WARN] Anomaly detected in sector 7G...', delay: 500, progress: 35, type: 'warning' },
-            { text: '[SEC] Activating quantum encryption...', delay: 800, progress: 45, type: 'info' },
-            { text: '[NET] Establishing quantum tunnels...', delay: 700, progress: 55, type: 'info' },
-            { text: '[ERR] Unauthorized access attempt blocked...', delay: 300, progress: 60, type: 'error' },
-            { text: '[SEC] Neural firewall activated...', delay: 800, progress: 70, type: 'success' },
-            { text: '[SYS] Calibrating quantum stabilizers...', delay: 600, progress: 80, type: 'info' },
-            { text: '[OK] System integrity verified...', delay: 500, progress: 90, type: 'success' },
-            { text: '[SYS] Quantum OS ready.', delay: 1000, progress: 100, type: 'success' }
-        ];
-
-        async function startBootSequence() {
-            const content = document.getElementById('bootContent');
-            const progress = document.getElementById('bootProgress');
-            const status = document.getElementById('bootStatus');
-            const bootScreen = document.getElementById('bootScreen');
-            const startTime = Date.now();
-
-            // Simüle edilmiş sistem bilgileri
-            setInterval(() => {
-                const memory = Math.floor(Math.random() * 1024) + 3072;
-                const cpu = Math.floor(Math.random() * 30) + 70;
-                const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                const time = new Date(elapsed * 1000).toISOString().substr(11, 8);
-
-                document.getElementById('bootMemory').textContent = `RAM: ${memory} MB`;
-                document.getElementById('bootCPU').textContent = `CPU: ${cpu}%`;
-                document.getElementById('bootTime').textContent = `Time: ${time}`;
-            }, 1000);
-
-            for (const item of bootSequence) {
-                const timestamp = new Date().toLocaleTimeString();
-                const line = document.createElement('div');
-                line.className = `boot-line ${item.type || ''}`;
-                line.style.animationDelay = `${item.delay * 0.001}s`;
-                
-                line.innerHTML = `
-                    <span class="boot-timestamp">[${timestamp}]</span>
-                    <span class="boot-message">${item.text}</span>
-                `;
-                
-                content.appendChild(line);
-                content.scrollTop = content.scrollHeight;
-                progress.style.width = `${item.progress}%`;
-                status.textContent = item.text;
-
-                if (item.type === 'error') {
-                    status.style.color = '#ff3366';
-                    await new Promise(r => setTimeout(r, 200));
-                    status.style.color = '';
-                } else if (item.type === 'warning') {
-                    status.style.color = '#ffaa00';
-                    await new Promise(r => setTimeout(r, 200));
-                    status.style.color = '';
-                } else if (item.type === 'success') {
-                    status.style.color = '#00ff88';
-                }
-
-                await new Promise(r => setTimeout(r, item.delay));
-            }
-
-            // Boot ekranını kaldır
-            await new Promise(r => setTimeout(r, 1000));
-            bootScreen.style.opacity = '0';
-            bootScreen.style.transition = 'opacity 1.5s';
+        document.addEventListener('mousemove', (e) => {
+            const terminal = document.querySelector('.pip-terminal');
+            const screen = document.querySelector('.screen');
+            const inputs = document.querySelectorAll('.input-field');
+            const loginForm = document.querySelector('.login-form');
+            const logo = document.querySelector('.pip-logo');
+            const statusBar = document.querySelector('.status-bar');
+            const rect = terminal.getBoundingClientRect();
             
-            setTimeout(() => {
-                bootScreen.style.display = 'none';
-                showTerminalMessages();
-            }, 1500);
-        }
+            // Mouse pozisyonu hesaplama
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            // Normalize edilmiş koordinatlar (-1 ile 1 arası)
+            const normalizedX = (mouseX - centerX) / centerX;
+            const normalizedY = (mouseY - centerY) / centerY;
+            
+            // Terminal ana hareketi
+            const rotationX = normalizedY * -15;
+            const rotationY = normalizedX * 15;
+            const lift = Math.abs(normalizedX * normalizedY) * 20;
+            
+            terminal.style.transform = `
+                translate(-50%, -50%)
+                perspective(2000px)
+                rotateX(${10 + rotationX}deg)
+                rotateY(${rotationY}deg)
+                translateZ(${80 + lift}px)
+            `;
 
-        // Giriş işlemi
+            // Logo animasyonu
+            const logoMove = Math.sin(Date.now() / 1000) * 5;
+            logo.style.transform = `
+                translateZ(${50 + logoMove}px)
+                rotateX(${-rotationX * 0.5}deg)
+                rotateY(${-rotationY * 0.5}deg)
+                scale(${1 + Math.abs(normalizedX * normalizedY) * 0.1})
+            `;
+
+            // Login form hareketi
+            loginForm.style.transform = `
+                translateZ(30px)
+                rotateX(${-rotationX * 0.3}deg)
+                rotateY(${-rotationY * 0.3}deg)
+            `;
+
+            // Input alanları için dinamik efekt
+            inputs.forEach(input => {
+                const inputRect = input.getBoundingClientRect();
+                const inputX = inputRect.left + inputRect.width / 2;
+                const inputY = inputRect.top + inputRect.height / 2;
+                
+                const deltaX = e.clientX - inputX;
+                const deltaY = e.clientY - inputY;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                const maxDistance = 200;
+                
+                if (distance < maxDistance) {
+                    const intensity = (1 - distance / maxDistance);
+                    const rotateX = deltaY * intensity * 0.02;
+                    const rotateY = -deltaX * intensity * 0.02;
+                    
+                    input.style.transform = `
+                        translateZ(30px)
+                        rotateX(${rotateX}deg)
+                        rotateY(${rotateY}deg)
+                    `;
+
+                    // Yan yüzeylerin dinamik hareketi
+                    const sides = input.querySelectorAll('.panel-side');
+                    sides.forEach(side => {
+                        if (side.classList.contains('panel-left')) {
+                            side.style.transform = `rotateY(90deg) translateZ(-10px) rotateX(${rotateX}deg)`;
+                        } else if (side.classList.contains('panel-right')) {
+                            side.style.transform = `rotateY(-90deg) translateZ(-10px) rotateX(${rotateX}deg)`;
+                        } else if (side.classList.contains('panel-top')) {
+                            side.style.transform = `rotateX(-90deg) translateZ(-10px) rotateY(${rotateY}deg)`;
+                        } else if (side.classList.contains('panel-bottom')) {
+                            side.style.transform = `rotateX(90deg) translateZ(-10px) rotateY(${rotateY}deg)`;
+                        }
+                    });
+                } else {
+                    input.style.transform = 'translateZ(0)';
+                    const sides = input.querySelectorAll('.panel-side');
+                    sides.forEach(side => {
+                        if (side.classList.contains('panel-left')) {
+                            side.style.transform = 'rotateY(90deg) translateZ(-10px)';
+                        } else if (side.classList.contains('panel-right')) {
+                            side.style.transform = 'rotateY(-90deg) translateZ(-10px)';
+                        } else if (side.classList.contains('panel-top')) {
+                            side.style.transform = 'rotateX(-90deg) translateZ(-10px)';
+                        } else if (side.classList.contains('panel-bottom')) {
+                            side.style.transform = 'rotateX(90deg) translateZ(-10px)';
+                        }
+                    });
+                }
+            });
+
+            // Status bar animasyonu
+            statusBar.style.transform = `
+                translateZ(${20 + Math.abs(normalizedX * normalizedY) * 10}px)
+                rotateX(${-rotationX * 0.2}deg)
+                rotateY(${-rotationY * 0.2}deg)
+            `;
+
+            // Işık efekti
+            const angle = Math.atan2(normalizedY, normalizedX) * (180 / Math.PI);
+            screen.style.setProperty('--mouse-deg', `${angle}deg`);
+            screen.style.setProperty('--light-opacity', Math.min(
+                Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY),
+                1
+            ));
+        });
+
+        // Mouse çıkınca yumuşak reset
+        document.addEventListener('mouseleave', () => {
+            const terminal = document.querySelector('.pip-terminal');
+            const inputs = document.querySelectorAll('.input-field');
+            const loginForm = document.querySelector('.login-form');
+            const logo = document.querySelector('.pip-logo');
+            const statusBar = document.querySelector('.status-bar');
+            
+            terminal.style.transform = `
+                translate(-50%, -50%)
+                perspective(2000px)
+                rotateX(10deg)
+                rotateY(0deg)
+                translateZ(80px)
+            `;
+            
+            logo.style.transform = 'translateZ(50px)';
+            loginForm.style.transform = 'translateZ(30px)';
+            
+            inputs.forEach(input => {
+                input.style.transform = 'translateZ(30px)';
+                input.style.boxShadow = 'none';
+                
+                const sides = input.querySelectorAll('.panel-side');
+                sides.forEach(side => {
+                    if (side.classList.contains('panel-left')) {
+                        side.style.transform = 'rotateY(90deg) translateZ(-10px)';
+                    } else if (side.classList.contains('panel-right')) {
+                        side.style.transform = 'rotateY(-90deg) translateZ(-10px)';
+                    } else if (side.classList.contains('panel-top')) {
+                        side.style.transform = 'rotateX(-90deg) translateZ(-10px)';
+                    } else if (side.classList.contains('panel-bottom')) {
+                        side.style.transform = 'rotateX(90deg) translateZ(-10px)';
+                    }
+                });
+
+                const inputElement = input.querySelector('input');
+                if (inputElement) {
+                    inputElement.style.textShadow = 'none';
+                }
+            });
+            
+            statusBar.style.transform = 'translateZ(20px)';
+        });
+
+        // Giriş kontrolü
         document.getElementById('accessCode').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
+                const userId = document.getElementById('userId').value.trim();
                 const code = this.value.trim();
-                const message = document.getElementById('accessMessage');
+                const terminal = document.querySelector('.pip-terminal');
+                const screen = document.querySelector('.screen');
+                const inputs = document.querySelectorAll('.input-field');
+                const logo = document.querySelector('.pip-logo');
                 
-                if (code === '112263') {
-                    message.className = 'output-line success';
-                    message.textContent = 'ACCESS GRANTED - INITIALIZING SYSTEM...';
+                if (userId === 'admin' && code === '112263') {
+                    // Başarılı giriş animasyonu
+                    terminal.style.animation = 'success-animation 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+                    terminal.style.boxShadow = '0 0 50px var(--pip-green)';
+                    terminal.style.animation = 'success-glow 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards';
                     
+                    // Logo ve input alanları için efekt
+                    logo.style.animation = 'text-success 1.5s forwards';
+                    inputs.forEach(input => {
+                        input.style.animation = 'text-success 1.5s forwards';
+                        const sides = input.querySelectorAll('.panel-side');
+                        sides.forEach(side => {
+                            if (side.classList.contains('panel-left')) {
+                                side.style.borderColor = '#fff';
+                                side.style.boxShadow = '0 0 30px var(--pip-green)';
+                            } else if (side.classList.contains('panel-right')) {
+                                side.style.borderColor = '#fff';
+                                side.style.boxShadow = '0 0 30px var(--pip-green)';
+                            } else if (side.classList.contains('panel-top')) {
+                                side.style.borderColor = '#fff';
+                                side.style.boxShadow = '0 0 30px var(--pip-green)';
+                            } else if (side.classList.contains('panel-bottom')) {
+                                side.style.borderColor = '#fff';
+                                side.style.boxShadow = '0 0 30px var(--pip-green)';
+                            }
+                        });
+                    });
+
+                    // Ekran parlaması efekti
+                    const flash = document.createElement('div');
+                    flash.style.cssText = `
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: rgba(46, 204, 113, 0);
+                        transition: background 1.5s;
+                        pointer-events: none;
+                        z-index: 9999;
+                    `;
+                    document.body.appendChild(flash);
+                    
+                    setTimeout(() => {
+                        flash.style.background = 'rgba(46, 204, 113, 0.3)';
+                    }, 100);
+
                     localStorage.setItem('isLoggedIn', 'true');
-                    
-                    // Giriş animasyonu
-                    document.querySelector('.login-box').style.animation = 'powerOn 1.5s forwards';
-                    
-                    // Matrix hızlandırma efekti
-                    const matrix = new MatrixEffect();
-                    matrix.speedUp();
                     
                     setTimeout(() => {
                         window.location.href = 'admin.html';
                     }, 1500);
                 } else {
-                    message.className = 'output-line error';
-                    message.textContent = 'ACCESS DENIED';
-                    this.value = '';
+                    // Hatalı giriş animasyonu
+                    terminal.style.animation = 'shake 0.5s cubic-bezier(0.36, 0, 0.66, -0.56)';
+                    terminal.style.boxShadow = '0 0 50px rgba(231, 76, 60, 0.5)';
                     
-                    // Hata animasyonu
-                    document.body.style.animation = 'glitch 0.3s';
+                    inputs.forEach(input => {
+                        input.style.borderColor = '#e74c3c';
+                        input.style.boxShadow = '0 0 20px rgba(231, 76, 60, 0.5)';
+                    });
+
                     setTimeout(() => {
-                        document.body.style.animation = '';
+                        terminal.style.animation = '';
+                        terminal.style.boxShadow = '0 0 50px var(--pip-glow)';
+                        inputs.forEach(input => {
+                            input.style.borderColor = 'var(--pip-green)';
+                            input.style.boxShadow = 'none';
+                        });
                     }, 500);
+
+                    this.value = '';
+                    document.getElementById('userId').value = '';
                 }
             }
         });
-
-        // Sayfa yüklendiğinde boot animasyonunu başlat
-        document.addEventListener('DOMContentLoaded', startBootSequence);
-
-        // Otomatik fokus
-        document.getElementById('accessCode').focus();
     </script>
 </body>
 </html>
